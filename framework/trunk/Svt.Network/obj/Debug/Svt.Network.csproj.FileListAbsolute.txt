@@ -1,0 +1,10 @@
+C:\Lokala Filer\Subversion\CasparComponents\trunk\Svt.Network\bin\Debug\Svt.Network.dll
+C:\Lokala Filer\Subversion\CasparComponents\trunk\Svt.Network\bin\Debug\Svt.Network.pdb
+C:\Lokala Filer\Subversion\CasparComponents\trunk\Svt.Network\obj\Debug\ResolveAssemblyReference.cache
+C:\Lokala Filer\Subversion\CasparComponents\trunk\Svt.Network\obj\Debug\Svt.Network.dll
+C:\Lokala Filer\Subversion\CasparComponents\trunk\Svt.Network\obj\Debug\Svt.Network.pdb
+C:\Lokala Filer\SourceForge\CasparCG\framework\Svt.Network\bin\Debug\Svt.Network.dll
+C:\Lokala Filer\SourceForge\CasparCG\framework\Svt.Network\bin\Debug\Svt.Network.pdb
+C:\Lokala Filer\SourceForge\CasparCG\framework\Svt.Network\obj\Debug\ResolveAssemblyReference.cache
+C:\Lokala Filer\SourceForge\CasparCG\framework\Svt.Network\obj\Debug\Svt.Network.dll
+C:\Lokala Filer\SourceForge\CasparCG\framework\Svt.Network\obj\Debug\Svt.Network.pdb
