@@ -9,16 +9,25 @@ namespace Svt.Network
 {
     public class ConnectionEventArgs : EventArgs
     {
-        public ConnectionEventArgs(string host, int port, bool connected)
+        internal ConnectionEventArgs(string host, int port, bool connected)
         {
             Hostname = host;
             Port = port;
             Connected = connected;
+            Exception = null;
+        }
+        internal ConnectionEventArgs(string host, int port, bool connected, Exception exception)
+        {
+            Hostname = host;
+            Port = port;
+            Connected = connected;
+            Exception = exception;
         }
 
         public string Hostname { get; private set; }
         public int Port { get; private set; }
         public bool Connected { get; private set; }
+        public Exception Exception { get; private set; }
     }
 
     [Obsolete()]
@@ -158,10 +167,10 @@ namespace Svt.Network
                     else
                     {
                         string data = "";
-                        if (strategy_ != null)
+                        if (ProtocolStrategy != null)
                         {
-                            data = strategy_.Encoding.GetString(recvBuffer, 0, len);
-                            strategy_.ParseResponse(data);
+                            data = ProtocolStrategy.Encoding.GetString(recvBuffer, 0, len);
+                            ProtocolStrategy.Parse(data);
                         }
 
                         myStream.BeginRead(recvBuffer, 0, recvBuffer.Length, new AsyncCallback(RecvCallback_obsolete), null);
@@ -216,6 +225,7 @@ namespace Svt.Network
 			}
 		}
 
+        [Obsolete()]
         protected void OnConnected()
         {
             try
@@ -227,6 +237,7 @@ namespace Svt.Network
             catch { }
         }
 
+        [Obsolete()]
         protected void OnFailedConnect()
         {
             try
@@ -238,6 +249,7 @@ namespace Svt.Network
             catch { }
         }
 
+        [Obsolete()]
         protected void OnAsyncException(ExceptionEventArgs serverExceptionEventArgs)
         {
             try
@@ -256,8 +268,12 @@ namespace Svt.Network
 
         public string Hostname { get; private set; }
         public int Port { get; private set; }
+        public IProtocolStrategy ProtocolStrategy { get; set; }
 
-		private IProtocolStrategy strategy_ = null;
+        public bool IsConnected
+        {
+            get { return (myClient != null) ? myClient.Connected : false; }
+        }
 
 		TcpClient myClient = null;
 		NetworkStream myStream = null;
@@ -279,15 +295,10 @@ namespace Svt.Network
                 myClient = new TcpClient();
                 myClient.BeginConnect(Hostname, Port, new AsyncCallback(ConnectCallback), null);
             }
-            catch
+            catch(Exception ex)
             {
-                if (myClient != null)
-                {
-                    myClient.Close();
-                    myClient = null;
-                }
-
-                OnClosedConnection();
+                DoCloseConnection();
+                OnClosedConnection(ex);
             }
         }
 
@@ -302,119 +313,114 @@ namespace Svt.Network
 
 				OnOpenedConnection();
 			}
-			catch
+			catch(Exception ex)
 			{
-				if(myStream != null) {
-					myStream.Close();
-					myStream = null;
-				}
-
-				if(myClient != null) {
-					myClient.Close();
-					myClient = null;
-				}
-
-				OnClosedConnection();
+                DoCloseConnection();
+				OnClosedConnection(ex);
 			}
 		}
 
-        public void CloseConnection()
+        private bool DoCloseConnection()
         {
-
             if (myStream != null)
             {
-                myStream.Close();   //does not throw
+                myStream.Close();
                 myStream = null;
             }
 
+            bool returnValue = (myClient != null);
             if (myClient != null)
             {
-                myClient.Close();   //does not throw
+                myClient.Close();
                 myClient = null;
-
-                OnClosedConnection();
             }
+
+            return returnValue;
+        }
+
+        public void CloseConnection()
+        {
+            //Only send notification if there actually was a connection to close
+            if (DoCloseConnection())
+                OnClosedConnection();
         }
 
 		public bool SendString(string str) {
-			try
-			{
-				if (myStream != null && myStream.CanWrite)
-				{
-					String data = str;
+            try
+            {
+                if (myStream != null && myStream.CanWrite)
+                {
+                    String data = str;
                     byte[] sendBytes = null;
-                    if (strategy_ != null)
+                    if (ProtocolStrategy != null)
                     {
-                        data += strategy_.Delimiter;
-                        sendBytes = strategy_.Encoding.GetBytes(data);
+                        data += ProtocolStrategy.Delimiter;
+                        sendBytes = ProtocolStrategy.Encoding.GetBytes(data);
                     }
                     else
                         sendBytes = Encoding.ASCII.GetBytes(data);
 
-                    if(sendBytes.Length > 0)
-					    myStream.Write(sendBytes, 0, sendBytes.Length);
-					return true;
-				}
-			}
-			catch(Exception e)
-            {
-                try
-                {
-                    OnAsyncException(new ExceptionEventArgs(e));
+                    if (sendBytes.Length > 0)
+                        myStream.Write(sendBytes, 0, sendBytes.Length);
+
+                    return true;
                 }
-                catch { }
+            }
+            catch (System.IO.IOException ioe)
+            {
+                if (ioe.InnerException.GetType() == typeof(System.Net.Sockets.SocketError))
+                {
+                    System.Net.Sockets.SocketException se = (System.Net.Sockets.SocketException)ioe.InnerException;
+                    if (DoCloseConnection())
+                        OnClosedConnection(se);                    
+                }
+                else
+                    throw;
+            }
+            catch (System.ObjectDisposedException ode)
+            {
+                if (DoCloseConnection())
+                    OnClosedConnection(ode);
             }
 			
 			return false;
 		}
 
-		private void RecvCallback(IAsyncResult ar) {
-			try
-			{
-				if (myStream.CanRead)
-				{
-					int len = myStream.EndRead(ar);
-					if (len == 0)
-					{
-						Disconnect();
-					}
-					else
-					{
-						string data = "";
-						if (strategy_ != null)
-						{
-							data = strategy_.Encoding.GetString(recvBuffer, 0, len);
-							strategy_.ParseResponse(data);
-						}
+		private void RecvCallback(IAsyncResult ar) 
+        {
+            try
+            {
+                int len = myStream.EndRead(ar);
+                if (len == 0)
+                    CloseConnection();
+                else
+                {
+                    try
+                    {
+                        if (ProtocolStrategy != null)
+                        {
+                            if (ProtocolStrategy.Encoding != null)
+                                ProtocolStrategy.Parse(ProtocolStrategy.Encoding.GetString(recvBuffer, 0, len));
+                            else
+                                ProtocolStrategy.Parse(recvBuffer, len);
+                        }
+                    }
+                    catch { }
 
-						myStream.BeginRead(recvBuffer, 0, recvBuffer.Length, new AsyncCallback(RecvCallback), null);
-					}
-				}
-			}
-			catch (System.IO.IOException ioe)
-			{
-				if (ioe.InnerException.GetType() == typeof(System.Net.Sockets.SocketError))
-				{
-					System.Net.Sockets.SocketException se = (System.Net.Sockets.SocketException)ioe.InnerException;
+                    myStream.BeginRead(recvBuffer, 0, recvBuffer.Length, new AsyncCallback(RecvCallback), null);
+                }
+            }
+            catch (System.IO.IOException ioe)
+            {
+                if (ioe.InnerException.GetType() == typeof(System.Net.Sockets.SocketError))
+                {
+                    System.Net.Sockets.SocketException se = (System.Net.Sockets.SocketException)ioe.InnerException;
 
-					try
-					{
-						Disconnect();
-					}
-					catch (NullReferenceException ne)
-					{ }
-					catch (Exception e)
-					{
-						OnAsyncException(new ExceptionEventArgs(e));
-					}
-				}
-			}
-			catch (NullReferenceException ne)
-			{ }
-			catch (Exception e)
-			{
-				OnAsyncException(new ExceptionEventArgs(e));
-			}
+                    if (DoCloseConnection())
+                        OnClosedConnection(se);
+                }
+            }
+            catch { }
 		}
 
 		protected void OnOpenedConnection()
@@ -428,26 +434,19 @@ namespace Svt.Network
             catch { }
 		}
 
-		protected void OnClosedConnection()
-		{
+        protected void OnClosedConnection()
+        {
+            OnClosedConnection(null);
+        }
+        protected void OnClosedConnection(Exception ex)
+        {
             try
             {
                 //Signal that we got diconnected
                 if (ConnectionStateChanged != null)
-                    ConnectionStateChanged(this, new ConnectionEventArgs(Hostname, Port, false));
+                    ConnectionStateChanged(this, new ConnectionEventArgs(Hostname, Port, false, ex));
             }
             catch { }
  		}
-		#region Properties
-
-
-		public bool IsConnected {
-			get { return (myClient != null) ? myClient.Connected : false; }
-		}
-		public IProtocolStrategy ProtocolStrategy {
-			get { return strategy_; }
-			set { strategy_ = value; }
-		}
-		#endregion Properties
 	}
 }
