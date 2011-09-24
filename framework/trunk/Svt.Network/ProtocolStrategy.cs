@@ -6,7 +6,8 @@ namespace Svt.Network
 {
 	public interface IProtocolStrategy
 	{
-		void ParseResponse(string data);
+        void Parse(string str);
+        void Parse(byte[] data, int length);
 
 		System.Text.Encoding Encoding {
 			get;

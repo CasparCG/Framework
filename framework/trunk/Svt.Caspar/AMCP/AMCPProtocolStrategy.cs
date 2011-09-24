@@ -168,10 +168,12 @@ namespace Svt.Caspar.AMCP
 			get { return System.Text.Encoding.UTF8; }
 		}
 
-		public void ParseResponse(string data)
+		public void Parse(string data)
 		{
 			parser_.Parse(data);
 		}
+        public void Parse(byte[] data, int length) { throw new NotImplementedException(); }
+
 		#endregion
 	}
 }
