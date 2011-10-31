@@ -7,29 +7,6 @@ using System.Net.Sockets;
 
 namespace Svt.Network	
 {
-    public class ConnectionEventArgs : EventArgs
-    {
-        internal ConnectionEventArgs(string host, int port, bool connected)
-        {
-            Hostname = host;
-            Port = port;
-            Connected = connected;
-            Exception = null;
-        }
-        internal ConnectionEventArgs(string host, int port, bool connected, Exception exception)
-        {
-            Hostname = host;
-            Port = port;
-            Connected = connected;
-            Exception = exception;
-        }
-
-        public string Hostname { get; private set; }
-        public int Port { get; private set; }
-        public bool Connected { get; private set; }
-        public Exception Exception { get; private set; }
-    }
-
     [Obsolete()]
 	public class ExceptionEventArgs : EventArgs
 	{
