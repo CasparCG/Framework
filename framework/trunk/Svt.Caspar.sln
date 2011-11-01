@@ -1,19 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+# Visual C# Express 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Svt.Caspar", "Svt.Caspar\Svt.Caspar.csproj", "{9B56A150-ECE3-4099-AEA1-0F8E115DC374}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Svt.Network", "Svt.Network\Svt.Network.csproj", "{941ED6A5-C8DF-459D-BFCE-5C6ED9AC0492}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Svt.Caspar.Controls", "Svt.Caspar.Controls\Svt.Caspar.Controls.csproj", "{D5CEE141-6C59-4837-A576-21BA098CC813}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Svt.Caspar.Hosts", "Svt.Caspar.Hosts\Svt.Caspar.Hosts.csproj", "{A3281EF0-A565-4CC5-8037-34FB1DDC2974}"
 EndProject
 Global
-	GlobalSection(SubversionScc) = preSolution
-		Svn-Managed = True
-		Manager = AnkhSVN - Subversion Support for Visual Studio
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -69,26 +63,6 @@ Global
 		{941ED6A5-C8DF-459D-BFCE-5C6ED9AC0492}.Unit test|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{941ED6A5-C8DF-459D-BFCE-5C6ED9AC0492}.Unit test|Mixed Platforms.Build.0 = Release|Any CPU
 		{941ED6A5-C8DF-459D-BFCE-5C6ED9AC0492}.Unit test|Win32.ActiveCfg = Release|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Develop|Any CPU.ActiveCfg = Develop|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Develop|Any CPU.Build.0 = Develop|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Develop|Mixed Platforms.ActiveCfg = Develop|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Develop|Mixed Platforms.Build.0 = Develop|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Develop|Win32.ActiveCfg = Develop|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Release|Win32.ActiveCfg = Release|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Unit test|Any CPU.ActiveCfg = Release|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Unit test|Any CPU.Build.0 = Release|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Unit test|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Unit test|Mixed Platforms.Build.0 = Release|Any CPU
-		{D5CEE141-6C59-4837-A576-21BA098CC813}.Unit test|Win32.ActiveCfg = Release|Any CPU
 		{A3281EF0-A565-4CC5-8037-34FB1DDC2974}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A3281EF0-A565-4CC5-8037-34FB1DDC2974}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A3281EF0-A565-4CC5-8037-34FB1DDC2974}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
@@ -112,5 +86,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(SubversionScc) = preSolution
+		Svn-Managed = True
+		Manager = AnkhSVN - Subversion Support for Visual Studio
 	EndGlobalSection
 EndGlobal

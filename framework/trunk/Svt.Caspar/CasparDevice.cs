@@ -138,9 +138,7 @@ namespace Svt.Caspar
 		{
 			if (!IsConnected)
 			{
-				server_.Hostname = Settings.Hostname;
-				server_.Port = Settings.Port;
-				server_.Connect();
+				server_.Connect(Settings.Hostname, Settings.Port);
 				return true;
 			}
 			return false;

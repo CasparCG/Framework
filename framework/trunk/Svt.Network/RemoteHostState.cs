@@ -41,6 +41,7 @@ namespace Svt.Network
             return result;
         }
 
+		public bool Connected { get { return (Client != null) ? Client.Connected : false; } }
         public NetworkStream Stream { get; private set; }
         public TcpClient Client { get; private set; }
         public byte[] ReadBuffer { get; private set; }
