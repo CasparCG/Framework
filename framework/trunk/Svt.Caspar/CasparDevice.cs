@@ -72,6 +72,11 @@ namespace Svt.Caspar
 		}
 		#endregion
 
+        public void SendString(string command)
+        {
+            if (IsConnected)
+                server_.SendString(command);
+        }
 		public void RefreshMediafiles()
 		{
 			if (IsConnected)
