@@ -84,15 +84,15 @@ namespace Svt.Network
         [Obsolete("Use InitiateConnection instead")]
         public void Connect()
         {
+			TcpClient client = new TcpClient();
 			try
 			{
-				myClient = new TcpClient();
-				myClient.BeginConnect(Hostname, Port, new AsyncCallback(ConnectCallback_obsolete), null);
+				client.BeginConnect(Hostname, Port, new AsyncCallback(ConnectCallback_obsolete), client);
 			}
 			catch {
-				if(myClient != null) {
-					myClient.Close();
-					myClient = null;
+				if(client != null) {
+					client.Close();
+					client = null;
 				}
 
 				OnFailedConnect();
@@ -102,28 +102,29 @@ namespace Svt.Network
         [Obsolete()]
         private void ConnectCallback_obsolete(IAsyncResult ar)
         {
+			TcpClient client = null;
             try
             {
-                myClient.EndConnect(ar);
+				client = (TcpClient)ar.AsyncState;
+                client.EndConnect(ar);
+                client.NoDelay = true;
 
-                myClient.NoDelay = true;
-                myStream = myClient.GetStream();
-                myStream.BeginRead(recvBuffer, 0, recvBuffer.Length, new AsyncCallback(RecvCallback_obsolete), null);
+				RemoteState = new RemoteHostState(client);
+				RemoteState.Stream.BeginRead(RemoteState.ReadBuffer, 0, RemoteState.ReadBuffer.Length, new AsyncCallback(RecvCallback_obsolete), null);
 
                 OnConnected();
             }
             catch
             {
-                if (myStream != null)
+				if (RemoteState != null)
+				{
+					RemoteState.Close();
+					RemoteState = null;
+				}
+				else if (client != null)
                 {
-                    myStream.Close();
-                    myStream = null;
-                }
-
-                if (myClient != null)
-                {
-                    myClient.Close();
-                    myClient = null;
+                    client.Close();
+                    client = null;
                 }
 
                 OnFailedConnect();
@@ -134,9 +135,9 @@ namespace Svt.Network
         {
             try
             {
-                if (myStream.CanRead)
+                if (RemoteState.Stream.CanRead)
                 {
-                    int len = myStream.EndRead(ar);
+                    int len = RemoteState.Stream.EndRead(ar);
                     if (len == 0)
                     {
                         Disconnect();
@@ -146,11 +147,11 @@ namespace Svt.Network
                         string data = "";
                         if (ProtocolStrategy != null)
                         {
-                            data = ProtocolStrategy.Encoding.GetString(recvBuffer, 0, len);
+                            data = ProtocolStrategy.Encoding.GetString(RemoteState.ReadBuffer, 0, len);
                             ProtocolStrategy.Parse(data);
                         }
 
-                        myStream.BeginRead(recvBuffer, 0, recvBuffer.Length, new AsyncCallback(RecvCallback_obsolete), null);
+                        RemoteState.Stream.BeginRead(RemoteState.ReadBuffer, 0, RemoteState.ReadBuffer.Length, new AsyncCallback(RecvCallback_obsolete), null);
                     }
                 }
             }
@@ -181,17 +182,10 @@ namespace Svt.Network
         }
 
         [Obsolete("Use CloseConnection instead")]
-		public void Disconnect() {
-
-			if(myStream != null) {
-				myStream.Close();   //does not throw
-                myStream = null;
-			}
-
-			if(myClient != null) {
-				myClient.Close();   //does not throw
-                myClient = null;
-
+		public void Disconnect()
+		{
+			if(RemoteState != null && RemoteState.Close())
+			{
                 try
                 {
                     //Signal that we got disconnected
@@ -246,73 +240,76 @@ namespace Svt.Network
         public string Hostname { get; private set; }
         public int Port { get; private set; }
         public IProtocolStrategy ProtocolStrategy { get; set; }
+		RemoteHostState RemoteState { get; set; }
 
         public bool IsConnected
         {
-            get { return (myClient != null) ? myClient.Connected : false; }
+            get { return (RemoteState != null) ? RemoteState.Connected : false; }
         }
 
-		TcpClient myClient = null;
-		NetworkStream myStream = null;
-		byte[] recvBuffer = new byte[1024];
 
 		public ServerConnection() 
 		{}
 
         public void InitiateConnection(string hostName, int port)
         {
-            if (myClient != null)
+            if (RemoteState != null)
                 CloseConnection();
 
 			Hostname = (string.IsNullOrEmpty(hostName) ? "localhost" : hostName);
             Port = port;
-		
-            try
+
+			TcpClient client = new TcpClient();
+			try
             {
-                myClient = new TcpClient();
-                myClient.BeginConnect(Hostname, Port, new AsyncCallback(ConnectCallback), null);
+                client.BeginConnect(Hostname, Port, new AsyncCallback(ConnectCallback), client);
             }
             catch(Exception ex)
             {
-                DoCloseConnection();
+				if (client != null)
+				{
+					client.Close();
+					client = null;
+				}
                 OnClosedConnection(ex);
             }
         }
 
-		private void ConnectCallback(IAsyncResult ar) {
+		private void ConnectCallback(IAsyncResult ar) 
+		{
+			TcpClient client = null;
 			try
 			{
-				myClient.EndConnect(ar);
+				client = (TcpClient)ar.AsyncState;
+				client.EndConnect(ar);
+				client.NoDelay = true;
 
-				myClient.NoDelay = true;
-				myStream = myClient.GetStream();
-				myStream.BeginRead(recvBuffer, 0, recvBuffer.Length, new AsyncCallback(RecvCallback), null);
+				RemoteState = new RemoteHostState(client);
+				RemoteState.Stream.BeginRead(RemoteState.ReadBuffer, 0, RemoteState.ReadBuffer.Length, new AsyncCallback(RecvCallback), null);
 
 				OnOpenedConnection();
 			}
 			catch(Exception ex)
 			{
-                DoCloseConnection();
+				if (RemoteState != null)
+				{
+					DoCloseConnection();
+				}
+				else
+				{
+					if (client != null)
+					{
+						client.Close();
+						client = null;
+					}
+				}
 				OnClosedConnection(ex);
 			}
 		}
 
         private bool DoCloseConnection()
         {
-            if (myStream != null)
-            {
-                myStream.Close();
-                myStream = null;
-            }
-
-            bool returnValue = (myClient != null);
-            if (myClient != null)
-            {
-                myClient.Close();
-                myClient = null;
-            }
-
-            return returnValue;
+            return (RemoteState != null) ? RemoteState.Close() : false;
         }
 
         public void CloseConnection()
@@ -325,7 +322,7 @@ namespace Svt.Network
 		public bool SendString(string str) {
             try
             {
-                if (myStream != null && myStream.CanWrite)
+                if (RemoteState != null && RemoteState.Stream.CanWrite)
                 {
                     String data = str;
                     byte[] sendBytes = null;
@@ -338,7 +335,7 @@ namespace Svt.Network
                         sendBytes = Encoding.ASCII.GetBytes(data);
 
                     if (sendBytes.Length > 0)
-                        myStream.Write(sendBytes, 0, sendBytes.Length);
+                        RemoteState.Stream.Write(sendBytes, 0, sendBytes.Length);
 
                     return true;
                 }
@@ -367,7 +364,7 @@ namespace Svt.Network
         {
             try
             {
-                int len = myStream.EndRead(ar);
+                int len = RemoteState.Stream.EndRead(ar);
                 if (len == 0)
                     CloseConnection();
                 else
@@ -377,14 +374,14 @@ namespace Svt.Network
                         if (ProtocolStrategy != null)
                         {
                             if (ProtocolStrategy.Encoding != null)
-                                ProtocolStrategy.Parse(ProtocolStrategy.Encoding.GetString(recvBuffer, 0, len));
+                                ProtocolStrategy.Parse(ProtocolStrategy.Encoding.GetString(RemoteState.ReadBuffer, 0, len));
                             else
-                                ProtocolStrategy.Parse(recvBuffer, len);
+                                ProtocolStrategy.Parse(RemoteState.ReadBuffer, len);
                         }
                     }
                     catch { }
 
-                    myStream.BeginRead(recvBuffer, 0, recvBuffer.Length, new AsyncCallback(RecvCallback), null);
+                    RemoteState.Stream.BeginRead(RemoteState.ReadBuffer, 0, RemoteState.ReadBuffer.Length, new AsyncCallback(RecvCallback), null);
                 }
             }
             catch (System.IO.IOException ioe)

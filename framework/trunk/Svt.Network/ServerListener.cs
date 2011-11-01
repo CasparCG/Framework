@@ -84,6 +84,7 @@ namespace Svt.Network
             catch(Exception ex)
             {
                 CloseConnection(state, ex);
+				state = null;
             }
 
             if(state != null)
@@ -157,16 +158,9 @@ namespace Svt.Network
             }
             catch { }
 
-            try
-            {
-                client.Send(data);
-            }
-            catch (System.IO.IOException ioe)
-            {
-                CloseConnection(client, ioe);
-            }
-            catch { }
+			SendTo(data, client);
         }
+
         public void SendTo(byte[] data, RemoteHostState client)
         {
             try
@@ -180,7 +174,7 @@ namespace Svt.Network
             catch { }
         }
 
-        public void SendToAllClients(string str)
+        public void SendToAll(string str)
         {
             byte[] data = null;
             try
@@ -192,23 +186,26 @@ namespace Svt.Network
             }
             catch { }
 
-            if (data != null)
-            {
-                foreach (RemoteHostState state in clients)
-                {
-                    try
-                    {
-                        state.Send(data);
-                    }
-                    catch (System.IO.IOException ioe)
-                    {
-                        CloseConnection(state, ioe);
-                    }
-                    catch { }
-                }
-            }
+			SendToAll(data);
         }
-
+		public void SendToAll(byte[] data)
+		{
+			if (data != null)
+			{
+				foreach (RemoteHostState state in clients)
+				{
+					try
+					{
+						state.Send(data);
+					}
+					catch (System.IO.IOException ioe)
+					{
+						CloseConnection(state, ioe);
+					}
+					catch { }
+				}
+			}
+		}
         public void CloseAll()
         {
             foreach (RemoteHostState client in clients)
