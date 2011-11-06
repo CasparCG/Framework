@@ -10,7 +10,7 @@ namespace Svt.Network
 {
     public class RemoteHostState
     {
-        internal ReaderWriterLockSlim streamLock = new ReaderWriterLockSlim();
+        internal ReaderWriterLockSlim streamLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
         internal RemoteHostState(TcpClient client)
         {
