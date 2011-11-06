@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Net.Sockets;
@@ -9,18 +10,24 @@ namespace Svt.Network
 {
     public class ServerListener
     {
-        TcpListener listener = null;
+        AsyncCallback readCallback = null;
+        AsyncCallback writeCallback = null;
         AsyncCallback asyncAcceptCallback = null;
+
+
+        TcpListener listener = null;
         List<RemoteHostState> clients = null;
 
         public event EventHandler<ClientConnectionEventArgs> ClientConnectionStateChanged;
         public event EventHandler<EventArgs> UnexpectedStop;
         public IProtocolStrategy ProtocolStrategy { get; set; }
-
+        
         public ServerListener()
         {
             clients = new List<RemoteHostState>();
             asyncAcceptCallback = new AsyncCallback(AcceptCallback);
+            readCallback = new AsyncCallback(ReadCallback);
+            writeCallback = new AsyncCallback(WriteCallback);
         }
 
         public void Start(int port)
@@ -64,86 +71,178 @@ namespace Svt.Network
             bool beginNewAccept = true;
             try
             {
-				if (ar.IsCompleted)
-				{
-					state = new RemoteHostState(listener.EndAcceptTcpClient(ar));
-					state.Stream.BeginRead(state.ReadBuffer, 0, state.ReadBuffer.Length, new AsyncCallback(ReadCallback), state);
+                if (ar.IsCompleted)
+                {
+                    state = new RemoteHostState(listener.EndAcceptTcpClient(ar));
+                    state.GotDataToSend += state_GotDataToSend;
 
-					OnClientConnectionStateChanged(state.EndPoint, true, null, true);
-				}
-				else
-					beginNewAccept = false;
+                    //no need to protect, state is not availible to any other threads yet
+                    state.Stream.BeginRead(state.ReadBuffer, 0, state.ReadBuffer.Length, readCallback, state);
+                }
+                else
+                    beginNewAccept = false;
             }
-            catch(SocketException se)
+            catch (SocketException se)
             {
-                if(se.SocketErrorCode == SocketError.Interrupted)
+                if (se.SocketErrorCode == SocketError.Interrupted)
                 {
                     beginNewAccept = false;
                 }
             }
-            catch(Exception ex)
+            catch (ObjectDisposedException)
+            {
+                beginNewAccept = false;
+            }
+            catch (Exception ex)
             {
                 CloseConnection(state, ex);
-				state = null;
+                state = null;
             }
 
-            if(state != null)
-                clients.Add(state);
+            if (state != null)
+            {
+                lock(clients)
+                    clients.Add(state);
+				
+				OnClientConnectionStateChanged(state.EndPoint, true, null, true);
+			}
 
             if(beginNewAccept)
                 DoBeginAccept();
         }
-       
+
+        void HandleIOException(System.IO.IOException ioe, RemoteHostState state)
+        {
+            if (ioe.InnerException.GetType() == typeof(System.Net.Sockets.SocketError))
+            {
+                System.Net.Sockets.SocketException se = (System.Net.Sockets.SocketException)ioe.InnerException;
+                CloseConnection(state, (se.SocketErrorCode == SocketError.Interrupted) ? null : se);
+            }
+            else
+                CloseConnection(state, ioe);
+        }
+
         void ReadCallback(IAsyncResult ar)
         {
             RemoteHostState state = (RemoteHostState)ar.AsyncState;
             try
             {
-                int len = state.Stream.EndRead(ar);
+                int len = 0;
+                
+                {   //READ-LOCKS THE STREAM-PROPERTY
+                    state.streamLock.EnterReadLock();
+                    try
+                    {
+                        len = state.Stream.EndRead(ar);
+                    }
+                    finally { state.streamLock.ExitReadLock(); }
+                }
+
                 if (len == 0)
                     CloseConnection(state, true);
                 else
                 {
-                    if (ProtocolStrategy != null)
+                    try
                     {
-                        if (ProtocolStrategy.Encoding != null)
-                            ProtocolStrategy.Parse(ProtocolStrategy.Encoding.GetString(state.ReadBuffer, 0, len));
-                        else
-                            ProtocolStrategy.Parse(state.ReadBuffer, len);
+                        if (ProtocolStrategy != null)
+                        {
+                            if (ProtocolStrategy.Encoding != null)
+                                ProtocolStrategy.Parse(ProtocolStrategy.Encoding.GetString(state.ReadBuffer, 0, len), state);
+                            else
+                                ProtocolStrategy.Parse(state.ReadBuffer, len, state);
+                        }
                     }
+                    catch { }
 
-                    state.Stream.BeginRead(state.ReadBuffer, 0, state.ReadBuffer.Length, new AsyncCallback(ReadCallback), state);
+                    {   //READ-LOCKS THE STREAM-PROPERTY
+                        state.streamLock.EnterReadLock();
+                        try
+                        {
+                            state.Stream.BeginRead(state.ReadBuffer, 0, state.ReadBuffer.Length, readCallback, state);
+                        }
+                        finally { state.streamLock.ExitReadLock(); }
+                    }
                 }
             }
             catch (System.IO.IOException ioe)
             {
-                if (ioe.InnerException.GetType() == typeof(System.Net.Sockets.SocketError))
-                {
-                    System.Net.Sockets.SocketException se = (System.Net.Sockets.SocketException)ioe.InnerException;
-                    CloseConnection(state, (se.SocketErrorCode == SocketError.Interrupted)?null:se);
-                }
+                HandleIOException(ioe, state);
             }
+            //We dont need to take care of ObjectDisposedException. 
+            //ObjectDisposedException would indicate that the state has been closed, and that means it has been disconnected already
             catch { }
         }
 
-        void CloseConnection(RemoteHostState state, bool remote)
+        #region Send
+        void state_GotDataToSend(object sender, EventArgs e)
         {
-            CloseConnection(state, remote, null);
+            RemoteHostState state = (RemoteHostState)sender;
+            DoSend(state);
         }
-        void CloseConnection(RemoteHostState state, Exception ex)
-        {
-            CloseConnection(state, false, ex);
-        }
-        void CloseConnection(RemoteHostState state, bool remote, Exception ex)
-        {
-            if (state != null)
-            {
-                IPEndPoint remoteHost = state.EndPoint;
-                clients.Remove(state);
-                state.Close();
 
-                OnClientConnectionStateChanged(remoteHost, false, ex, remote);
+        void DoSend(RemoteHostState state)
+        {
+            try
+            {
+                lock (state.SendQueue)
+                {
+                    if (state.SendQueue.Count > 0)
+                    {
+                        byte[] data = state.SendQueue.Peek();
+
+                        {   //READ-LOCKS THE STREAM-PROPERTY
+                            state.streamLock.EnterReadLock();
+                            try
+                            {
+                                state.Stream.BeginWrite(data, 0, data.Length, writeCallback, state);
+                            }
+                            finally { state.streamLock.ExitReadLock(); }
+                        }
+                    }
+                }
             }
+            catch (System.IO.IOException ioe)
+            {
+                HandleIOException(ioe, state);
+            }
+            //We dont need to take care of ObjectDisposedException. 
+            //ObjectDisposedException would indicate that the state has been closed, and that means it has been disconnected already
+            catch { }
+        }
+
+        void WriteCallback(IAsyncResult ar)
+        {
+            RemoteHostState state = (RemoteHostState)ar.AsyncState;
+
+            {   //READ-LOCKS THE STREAM-PROPERTY
+                state.streamLock.EnterReadLock();
+                try
+                {
+                    state.Stream.EndWrite(ar);
+                }
+                catch (System.IO.IOException ioe)
+                {
+                    HandleIOException(ioe, state);
+                    return;
+                }
+                //We dont need to take care of ObjectDisposedException. 
+                //ObjectDisposedException would indicate that the state has been closed, and that means it has been disconnected already
+                catch { }
+                finally { state.streamLock.ExitReadLock(); }
+            }
+
+            bool doSendMore = false;
+            lock (state.SendQueue)
+            {
+                if (state.SendQueue.Count > 0)   //This should always be true, since the currently sending data is left in the queue until this point
+                    state.SendQueue.Dequeue();
+
+                if (state.SendQueue.Count > 0)
+                    doSendMore = true;
+            }
+
+            if (doSendMore)
+                DoSend(state);
         }
 
         public void SendTo(string str, RemoteHostState client)
@@ -151,27 +250,19 @@ namespace Svt.Network
             byte[] data = null;
             try
             {
-                if (ProtocolStrategy != null)
+                if (ProtocolStrategy != null && ProtocolStrategy.Encoding != null)
                     data = ProtocolStrategy.Encoding.GetBytes(str + ProtocolStrategy.Delimiter);
                 else
                     data = Encoding.ASCII.GetBytes(str);
             }
             catch { }
 
-			SendTo(data, client);
+            SendTo(data, client);
         }
 
         public void SendTo(byte[] data, RemoteHostState client)
         {
-            try
-            {
-                client.Send(data);
-            }
-            catch (System.IO.IOException ioe)
-            {
-                CloseConnection(client, ioe);
-            }
-            catch { }
+            client.Send(data);
         }
 
         public void SendToAll(string str)
@@ -186,32 +277,69 @@ namespace Svt.Network
             }
             catch { }
 
-			SendToAll(data);
+            SendToAll(data);
         }
-		public void SendToAll(byte[] data)
-		{
-			if (data != null)
-			{
-				foreach (RemoteHostState state in clients)
-				{
-					try
-					{
-						state.Send(data);
-					}
-					catch (System.IO.IOException ioe)
-					{
-						CloseConnection(state, ioe);
-					}
-					catch { }
-				}
-			}
-		}
+        public void SendToAll(byte[] data)
+        {
+            if (data != null)
+            {
+                RemoteHostState[] hosts = null;
+                lock(clients)
+                    hosts = clients.ToArray();
+
+                if(hosts != null)
+                    foreach (RemoteHostState state in hosts)
+                        SendTo(data, state);
+            }
+        }
+        #endregion
+
+        public RemoteHostState[] GetClientsAsArray()
+        {
+            RemoteHostState[] hosts = null;
+            lock (clients)
+                hosts = clients.ToArray();
+
+            return hosts;
+        }
+
+        void CloseConnection(RemoteHostState state, bool remote)
+        {
+            CloseConnection(state, remote, null);
+        }
+        void CloseConnection(RemoteHostState state, Exception ex)
+        {
+            CloseConnection(state, false, ex);
+        }
+        void CloseConnection(RemoteHostState state, bool remote, Exception ex)
+        {
+            if (state != null)
+            {
+                lock (clients)
+                    clients.Remove(state);
+                IPEndPoint remoteHost = state.EndPoint;
+                state.GotDataToSend -= state_GotDataToSend;
+                state.Close();
+
+                OnClientConnectionStateChanged(remoteHost, false, ex, remote);
+            }
+        }
+
         public void CloseAll()
         {
-            foreach (RemoteHostState client in clients)
-                CloseConnection(client, false);
+            lock (clients)
+            {
+                foreach (RemoteHostState client in clients)
+                {
+                    IPEndPoint remoteHost = client.EndPoint;
+                    client.GotDataToSend -= state_GotDataToSend;
+                    client.Close();
 
-            clients.Clear();
+                    OnClientConnectionStateChanged(remoteHost, false, null, false);
+                }
+
+                clients.Clear();
+            }
         }
 
         protected void OnClientConnectionStateChanged(IPEndPoint remoteHost, bool connected, Exception ex, bool remote)

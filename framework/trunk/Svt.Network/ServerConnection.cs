@@ -110,6 +110,7 @@ namespace Svt.Network
                 client.NoDelay = true;
 
 				RemoteState = new RemoteHostState(client);
+                RemoteState.GotDataToSend +=new EventHandler<EventArgs>(RemoteState_GotDataToSend);
 				RemoteState.Stream.BeginRead(RemoteState.ReadBuffer, 0, RemoteState.ReadBuffer.Length, new AsyncCallback(RecvCallback_obsolete), null);
 
                 OnConnected();
@@ -135,25 +136,32 @@ namespace Svt.Network
         {
             try
             {
-                if (RemoteState.Stream.CanRead)
+                if (RemoteState != null)
                 {
-                    int len = RemoteState.Stream.EndRead(ar);
-                    if (len == 0)
+                    if (RemoteState.Stream.CanRead)
                     {
-                        Disconnect();
-                    }
-                    else
-                    {
-                        string data = "";
-                        if (ProtocolStrategy != null)
+                        int len = RemoteState.Stream.EndRead(ar);
+                        if (len == 0)
                         {
-                            data = ProtocolStrategy.Encoding.GetString(RemoteState.ReadBuffer, 0, len);
-                            ProtocolStrategy.Parse(data);
+                            Disconnect();
                         }
+                        else
+                        {
+                            string data = "";
+                            if (ProtocolStrategy != null)
+                            {
+                                data = ProtocolStrategy.Encoding.GetString(RemoteState.ReadBuffer, 0, len);
+                                ProtocolStrategy.Parse(data, null);
+                            }
 
-                        RemoteState.Stream.BeginRead(RemoteState.ReadBuffer, 0, RemoteState.ReadBuffer.Length, new AsyncCallback(RecvCallback_obsolete), null);
+                            RemoteState.Stream.BeginRead(RemoteState.ReadBuffer, 0, RemoteState.ReadBuffer.Length, new AsyncCallback(RecvCallback_obsolete), null);
+                        }
                     }
                 }
+                else
+                {
+                }
+
             }
             catch (System.IO.IOException ioe)
             {
@@ -186,6 +194,7 @@ namespace Svt.Network
 		{
 			if(RemoteState != null && RemoteState.Close())
 			{
+                RemoteState = null;
                 try
                 {
                     //Signal that we got disconnected
@@ -241,6 +250,10 @@ namespace Svt.Network
         public int Port { get; private set; }
         public IProtocolStrategy ProtocolStrategy { get; set; }
 		RemoteHostState RemoteState { get; set; }
+       
+        AsyncCallback readCallback = null;
+        AsyncCallback writeCallback = null;
+        AsyncCallback connectCallback = null;
 
         public bool IsConnected
         {
@@ -249,7 +262,11 @@ namespace Svt.Network
 
 
 		public ServerConnection() 
-		{}
+		{
+            readCallback = new AsyncCallback(ReadCallback);
+            writeCallback = new AsyncCallback(WriteCallback);
+            connectCallback = new AsyncCallback(ConnectCallback);
+        }
 
         public void InitiateConnection(string hostName, int port)
         {
@@ -262,7 +279,7 @@ namespace Svt.Network
 			TcpClient client = new TcpClient();
 			try
             {
-                client.BeginConnect(Hostname, Port, new AsyncCallback(ConnectCallback), client);
+                client.BeginConnect(Hostname, Port, connectCallback, client);
             }
             catch(Exception ex)
             {
@@ -285,7 +302,9 @@ namespace Svt.Network
 				client.NoDelay = true;
 
 				RemoteState = new RemoteHostState(client);
-				RemoteState.Stream.BeginRead(RemoteState.ReadBuffer, 0, RemoteState.ReadBuffer.Length, new AsyncCallback(RecvCallback), null);
+                RemoteState.GotDataToSend += RemoteState_GotDataToSend;
+                //no need to protect, state is not availible to any other threads yet
+                RemoteState.Stream.BeginRead(RemoteState.ReadBuffer, 0, RemoteState.ReadBuffer.Length, readCallback, null);
 
 				OnOpenedConnection();
 			}
@@ -307,64 +326,21 @@ namespace Svt.Network
 			}
 		}
 
-        private bool DoCloseConnection()
+        private void ReadCallback(IAsyncResult ar)
         {
-            return (RemoteState != null) ? RemoteState.Close() : false;
-        }
-
-        public void CloseConnection()
-        {
-            //Only send notification if there actually was a connection to close
-            if (DoCloseConnection())
-                OnClosedConnection();
-        }
-
-		public bool SendString(string str) {
             try
             {
-                if (RemoteState != null && RemoteState.Stream.CanWrite)
-                {
-                    String data = str;
-                    byte[] sendBytes = null;
-                    if (ProtocolStrategy != null)
+                int len = 0;
+
+                {   //READ-LOCKS THE STREAM-PROPERTY
+                    RemoteState.streamLock.EnterReadLock();
+                    try
                     {
-                        data += ProtocolStrategy.Delimiter;
-                        sendBytes = ProtocolStrategy.Encoding.GetBytes(data);
+                        len = RemoteState.Stream.EndRead(ar);
                     }
-                    else
-                        sendBytes = Encoding.ASCII.GetBytes(data);
-
-                    if (sendBytes.Length > 0)
-                        RemoteState.Stream.Write(sendBytes, 0, sendBytes.Length);
-
-                    return true;
+                    finally { RemoteState.streamLock.ExitReadLock(); }
                 }
-            }
-            catch (System.IO.IOException ioe)
-            {
-                if (ioe.InnerException.GetType() == typeof(System.Net.Sockets.SocketError))
-                {
-                    System.Net.Sockets.SocketException se = (System.Net.Sockets.SocketException)ioe.InnerException;
-                    if (DoCloseConnection())
-                        OnClosedConnection(se);                    
-                }
-                else
-                    throw;
-            }
-            catch (System.ObjectDisposedException ode)
-            {
-                if (DoCloseConnection())
-                    OnClosedConnection(ode);
-            }
-			
-			return false;
-		}
 
-		private void RecvCallback(IAsyncResult ar) 
-        {
-            try
-            {
-                int len = RemoteState.Stream.EndRead(ar);
                 if (len == 0)
                     CloseConnection();
                 else
@@ -374,14 +350,21 @@ namespace Svt.Network
                         if (ProtocolStrategy != null)
                         {
                             if (ProtocolStrategy.Encoding != null)
-                                ProtocolStrategy.Parse(ProtocolStrategy.Encoding.GetString(RemoteState.ReadBuffer, 0, len));
+                                ProtocolStrategy.Parse(ProtocolStrategy.Encoding.GetString(RemoteState.ReadBuffer, 0, len), RemoteState);
                             else
-                                ProtocolStrategy.Parse(RemoteState.ReadBuffer, len);
+                                ProtocolStrategy.Parse(RemoteState.ReadBuffer, len, RemoteState);
                         }
                     }
                     catch { }
 
-                    RemoteState.Stream.BeginRead(RemoteState.ReadBuffer, 0, RemoteState.ReadBuffer.Length, new AsyncCallback(RecvCallback), null);
+                    {   //READ-LOCKS THE STREAM-PROPERTY
+                        RemoteState.streamLock.EnterReadLock();
+                        try
+                        {
+                            RemoteState.Stream.BeginRead(RemoteState.ReadBuffer, 0, RemoteState.ReadBuffer.Length, readCallback, null);
+                        }
+                        finally { RemoteState.streamLock.ExitReadLock(); }
+                    }
                 }
             }
             catch (System.IO.IOException ioe)
@@ -391,13 +374,143 @@ namespace Svt.Network
                     System.Net.Sockets.SocketException se = (System.Net.Sockets.SocketException)ioe.InnerException;
 
                     if (DoCloseConnection())
-                        OnClosedConnection(se);
+                        OnClosedConnection((se.SocketErrorCode == SocketError.Interrupted) ? null : se);
                 }
+                else
+                    if (DoCloseConnection())
+                        OnClosedConnection(ioe);
             }
             catch { }
-		}
+        }
 
-		protected void OnOpenedConnection()
+        #region Send
+        void RemoteState_GotDataToSend(object sender, EventArgs e)
+        {
+            DoSend();
+        }
+
+        void DoSend()
+        {
+            try
+            {
+                lock (RemoteState.SendQueue)
+                {
+                    if (RemoteState.SendQueue.Count > 0)
+                    {
+                        byte[] data = RemoteState.SendQueue.Peek();
+                        
+                        {   //READ-LOCKS THE STREAM-PROPERTY
+                            RemoteState.streamLock.EnterReadLock();
+                            try
+                            {
+                                RemoteState.Stream.BeginWrite(data, 0, data.Length, writeCallback, null);
+                            }
+                            finally { RemoteState.streamLock.ExitReadLock(); }
+                        }
+                    }
+                }
+            }
+            catch (System.IO.IOException ioe)
+            {
+                if (ioe.InnerException.GetType() == typeof(System.Net.Sockets.SocketError))
+                {
+                    System.Net.Sockets.SocketException se = (System.Net.Sockets.SocketException)ioe.InnerException;
+                    if (DoCloseConnection())
+                        OnClosedConnection((se.SocketErrorCode == SocketError.Interrupted) ? null : se);
+                }
+                else
+                    if (DoCloseConnection())
+                        OnClosedConnection(ioe);
+            }
+            //We dont need to take care of ObjectDisposedException. 
+            //ObjectDisposedException would indicate that the state has been closed, and that means it has been disconnected already
+            catch { }
+        }
+
+        void WriteCallback(IAsyncResult ar)
+        {
+            {   //READ-LOCKS THE STREAM-PROPERTY
+                RemoteState.streamLock.EnterReadLock();
+                try
+                {
+                    RemoteState.Stream.EndWrite(ar);
+                }
+                catch (System.IO.IOException ioe)
+                {
+                    if (ioe.InnerException.GetType() == typeof(System.Net.Sockets.SocketError))
+                    {
+                        System.Net.Sockets.SocketException se = (System.Net.Sockets.SocketException)ioe.InnerException;
+                        if (DoCloseConnection())
+                            OnClosedConnection((se.SocketErrorCode == SocketError.Interrupted) ? null : se);
+                    }
+                    else
+                        if (DoCloseConnection())
+                            OnClosedConnection(ioe);
+
+                    return;
+                }
+                //We dont need to take care of ObjectDisposedException. 
+                //ObjectDisposedException would indicate that the state has been closed, and that means it has been disconnected already
+                catch { }
+                finally { RemoteState.streamLock.ExitReadLock(); }
+            }
+
+            bool doSendMore = false;
+            lock (RemoteState.SendQueue)
+            {
+                RemoteState.SendQueue.Dequeue();
+                if (RemoteState.SendQueue.Count > 0)
+                    doSendMore = true;
+            }
+
+            if (doSendMore)
+                DoSend();
+        }
+
+        public void SendString(string str)
+        {
+            byte[] data = null;
+            try
+            {
+                if (ProtocolStrategy != null && ProtocolStrategy.Encoding != null)
+                    data = ProtocolStrategy.Encoding.GetBytes(str + ProtocolStrategy.Delimiter);
+                else
+                    data = Encoding.ASCII.GetBytes(str);
+            }
+            catch { }
+
+            Send(data);
+        }
+
+        public void Send(byte[] data)
+        {
+            if(RemoteState != null)
+                RemoteState.Send(data);
+        }
+        #endregion
+
+        private bool DoCloseConnection()
+        {
+            if(RemoteState != null)
+            {
+                RemoteState.GotDataToSend -= RemoteState_GotDataToSend;
+                RemoteState.Close();
+                RemoteState = null;
+
+                return true;
+            }
+            else 
+                return false;
+        }
+
+        public void CloseConnection()
+        {
+            //Only send notification if there actually was a connection to close
+            if (DoCloseConnection())
+                OnClosedConnection();
+        }
+        
+        protected void OnOpenedConnection()
 		{
             try
             {
