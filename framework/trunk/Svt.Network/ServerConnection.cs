@@ -303,7 +303,6 @@ namespace Svt.Network
 
 				RemoteState = new RemoteHostState(client);
                 RemoteState.GotDataToSend += RemoteState_GotDataToSend;
-                //no need to protect, state is not availible to any other threads yet
                 RemoteState.Stream.BeginRead(RemoteState.ReadBuffer, 0, RemoteState.ReadBuffer.Length, readCallback, null);
 
 				OnOpenedConnection();
@@ -331,15 +330,7 @@ namespace Svt.Network
             try
             {
                 int len = 0;
-
-                {   //READ-LOCKS THE STREAM-PROPERTY
-                    RemoteState.streamLock.EnterReadLock();
-                    try
-                    {
-                        len = RemoteState.Stream.EndRead(ar);
-                    }
-                    finally { RemoteState.streamLock.ExitReadLock(); }
-                }
+                len = RemoteState.Stream.EndRead(ar);
 
                 if (len == 0)
                     CloseConnection();
@@ -357,14 +348,7 @@ namespace Svt.Network
                     }
                     catch { }
 
-                    {   //READ-LOCKS THE STREAM-PROPERTY
-                        RemoteState.streamLock.EnterReadLock();
-                        try
-                        {
-                            RemoteState.Stream.BeginRead(RemoteState.ReadBuffer, 0, RemoteState.ReadBuffer.Length, readCallback, null);
-                        }
-                        finally { RemoteState.streamLock.ExitReadLock(); }
-                    }
+                    RemoteState.Stream.BeginRead(RemoteState.ReadBuffer, 0, RemoteState.ReadBuffer.Length, readCallback, null);
                 }
             }
             catch (System.IO.IOException ioe)
@@ -393,22 +377,15 @@ namespace Svt.Network
         {
             try
             {
+                byte[] data = null;
                 lock (RemoteState.SendQueue)
                 {
                     if (RemoteState.SendQueue.Count > 0)
-                    {
-                        byte[] data = RemoteState.SendQueue.Peek();
-                        
-                        {   //READ-LOCKS THE STREAM-PROPERTY
-                            RemoteState.streamLock.EnterReadLock();
-                            try
-                            {
-                                RemoteState.Stream.BeginWrite(data, 0, data.Length, writeCallback, null);
-                            }
-                            finally { RemoteState.streamLock.ExitReadLock(); }
-                        }
-                    }
+                        data = RemoteState.SendQueue.Peek();
                 }
+
+                if (data != null)
+                    RemoteState.Stream.BeginWrite(data, 0, data.Length, writeCallback, null);
             }
             catch (System.IO.IOException ioe)
             {
@@ -429,31 +406,27 @@ namespace Svt.Network
 
         void WriteCallback(IAsyncResult ar)
         {
-            {   //READ-LOCKS THE STREAM-PROPERTY
-                RemoteState.streamLock.EnterReadLock();
-                try
-                {
-                    RemoteState.Stream.EndWrite(ar);
-                }
-                catch (System.IO.IOException ioe)
-                {
-                    if (ioe.InnerException.GetType() == typeof(System.Net.Sockets.SocketError))
-                    {
-                        System.Net.Sockets.SocketException se = (System.Net.Sockets.SocketException)ioe.InnerException;
-                        if (DoCloseConnection())
-                            OnClosedConnection((se.SocketErrorCode == SocketError.Interrupted) ? null : se);
-                    }
-                    else
-                        if (DoCloseConnection())
-                            OnClosedConnection(ioe);
-
-                    return;
-                }
-                //We dont need to take care of ObjectDisposedException. 
-                //ObjectDisposedException would indicate that the state has been closed, and that means it has been disconnected already
-                catch { }
-                finally { RemoteState.streamLock.ExitReadLock(); }
+            try
+            {
+                RemoteState.Stream.EndWrite(ar);
             }
+            catch (System.IO.IOException ioe)
+            {
+                if (ioe.InnerException.GetType() == typeof(System.Net.Sockets.SocketError))
+                {
+                    System.Net.Sockets.SocketException se = (System.Net.Sockets.SocketException)ioe.InnerException;
+                    if (DoCloseConnection())
+                        OnClosedConnection((se.SocketErrorCode == SocketError.Interrupted) ? null : se);
+                }
+                else
+                    if (DoCloseConnection())
+                        OnClosedConnection(ioe);
+
+                return;
+            }
+            //We dont need to take care of ObjectDisposedException. 
+            //ObjectDisposedException would indicate that the state has been closed, and that means it has been disconnected already
+            catch { }
 
             bool doSendMore = false;
             lock (RemoteState.SendQueue)
