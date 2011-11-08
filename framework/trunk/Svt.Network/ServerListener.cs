@@ -75,8 +75,6 @@ namespace Svt.Network
                 {
                     state = new RemoteHostState(listener.EndAcceptTcpClient(ar));
                     state.GotDataToSend += state_GotDataToSend;
-
-                    //no need to protect, state is not availible to any other threads yet
                     state.Stream.BeginRead(state.ReadBuffer, 0, state.ReadBuffer.Length, readCallback, state);
                 }
                 else
@@ -128,15 +126,7 @@ namespace Svt.Network
             try
             {
                 int len = 0;
-                
-                {   //READ-LOCKS THE STREAM-PROPERTY
-                    state.streamLock.EnterReadLock();
-                    try
-                    {
-                        len = state.Stream.EndRead(ar);
-                    }
-                    finally { state.streamLock.ExitReadLock(); }
-                }
+                len = state.Stream.EndRead(ar);
 
                 if (len == 0)
                     CloseConnection(state, true);
@@ -154,14 +144,7 @@ namespace Svt.Network
                     }
                     catch { }
 
-                    {   //READ-LOCKS THE STREAM-PROPERTY
-                        state.streamLock.EnterReadLock();
-                        try
-                        {
-                            state.Stream.BeginRead(state.ReadBuffer, 0, state.ReadBuffer.Length, readCallback, state);
-                        }
-                        finally { state.streamLock.ExitReadLock(); }
-                    }
+                    state.Stream.BeginRead(state.ReadBuffer, 0, state.ReadBuffer.Length, readCallback, state);
                 }
             }
             catch (System.IO.IOException ioe)
@@ -184,22 +167,15 @@ namespace Svt.Network
         {
             try
             {
+                byte[] data = null;
                 lock (state.SendQueue)
                 {
                     if (state.SendQueue.Count > 0)
-                    {
-                        byte[] data = state.SendQueue.Peek();
-
-                        {   //READ-LOCKS THE STREAM-PROPERTY
-                            state.streamLock.EnterReadLock();
-                            try
-                            {
-                                state.Stream.BeginWrite(data, 0, data.Length, writeCallback, state);
-                            }
-                            finally { state.streamLock.ExitReadLock(); }
-                        }
-                    }
+                        data = state.SendQueue.Peek();
                 }
+
+                if (data != null)
+                    state.Stream.BeginWrite(data, 0, data.Length, writeCallback, state);
             }
             catch (System.IO.IOException ioe)
             {
@@ -214,23 +190,19 @@ namespace Svt.Network
         {
             RemoteHostState state = (RemoteHostState)ar.AsyncState;
 
-            {   //READ-LOCKS THE STREAM-PROPERTY
-                state.streamLock.EnterReadLock();
-                try
-                {
-                    state.Stream.EndWrite(ar);
-                }
-                catch (System.IO.IOException ioe)
-                {
-                    HandleIOException(ioe, state);
-                    return;
-                }
-                //We dont need to take care of ObjectDisposedException. 
-                //ObjectDisposedException would indicate that the state has been closed, and that means it has been disconnected already
-                catch { }
-                finally { state.streamLock.ExitReadLock(); }
+            try
+            {
+                state.Stream.EndWrite(ar);
             }
-
+            catch (System.IO.IOException ioe)
+            {
+                HandleIOException(ioe, state);
+                return;
+            }
+            //We dont need to take care of ObjectDisposedException. 
+            //ObjectDisposedException would indicate that the state has been closed, and that means it has been disconnected already
+            catch { }
+ 
             bool doSendMore = false;
             lock (state.SendQueue)
             {
@@ -247,17 +219,7 @@ namespace Svt.Network
 
         public void SendTo(string str, RemoteHostState client)
         {
-            byte[] data = null;
-            try
-            {
-                if (ProtocolStrategy != null && ProtocolStrategy.Encoding != null)
-                    data = ProtocolStrategy.Encoding.GetBytes(str + ProtocolStrategy.Delimiter);
-                else
-                    data = Encoding.ASCII.GetBytes(str);
-            }
-            catch { }
-
-            SendTo(data, client);
+            SendTo(EncodeString(str), client);
         }
 
         public void SendTo(byte[] data, RemoteHostState client)
@@ -267,17 +229,7 @@ namespace Svt.Network
 
         public void SendToAll(string str)
         {
-            byte[] data = null;
-            try
-            {
-                if (ProtocolStrategy != null)
-                    data = ProtocolStrategy.Encoding.GetBytes(str + ProtocolStrategy.Delimiter);
-                else
-                    data = Encoding.ASCII.GetBytes(str);
-            }
-            catch { }
-
-            SendToAll(data);
+            SendToAll(EncodeString(str));
         }
         public void SendToAll(byte[] data)
         {
@@ -291,6 +243,21 @@ namespace Svt.Network
                     foreach (RemoteHostState state in hosts)
                         SendTo(data, state);
             }
+        }
+
+        byte[] EncodeString(string str)
+        {
+            byte[] data = null;
+            try
+            {
+                if (ProtocolStrategy != null && ProtocolStrategy.Encoding != null)
+                    data = ProtocolStrategy.Encoding.GetBytes(str + ProtocolStrategy.Delimiter);
+                else
+                    data = Encoding.ASCII.GetBytes(str);
+            }
+            catch(System.Text.EncoderFallbackException) { }
+
+            return data;
         }
         #endregion
 
