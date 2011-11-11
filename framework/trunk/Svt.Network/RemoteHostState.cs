@@ -10,7 +10,7 @@ namespace Svt.Network
 {
     public class RemoteHostState
     {
-        internal ReaderWriterLockSlim streamLock = new ReaderWriterLockSlim();
+        ReaderWriterLockSlim streamLock = new ReaderWriterLockSlim();
 
         internal RemoteHostState(TcpClient client)
         {
@@ -96,6 +96,7 @@ namespace Svt.Network
 
         //does not need protection. usage is synchronous
         internal byte[] ReadBuffer { get; private set; }
+		internal System.Text.Decoder Decoder { get; set; }
 
         //Is accessed by multiple threads, needs to be protected by a critical section
         internal Queue<byte[]> SendQueue { get; private set; }
