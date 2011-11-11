@@ -30,6 +30,8 @@ namespace Svt.Network
 
     public class ClientConnectionEventArgs : ConnectionEventArgs
     {
+		public RemoteHostState Client { get; set; }
+
         internal ClientConnectionEventArgs(string host, int port, bool connected, Exception ex, bool remote)
             : base(host, port, connected, ex)
         {

@@ -114,6 +114,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="KeepAliveHelper.cs" />
+    <Compile Include="ReconnectionHelper.cs" />
     <Compile Include="RemoteHostState.cs" />
     <Compile Include="ConnectionEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

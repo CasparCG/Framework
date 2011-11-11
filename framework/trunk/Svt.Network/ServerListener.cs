@@ -102,7 +102,7 @@ namespace Svt.Network
                 lock(clients)
                     clients.Add(state);
 				
-				OnClientConnectionStateChanged(state.EndPoint, true, null, true);
+				OnClientConnected(state);
 			}
 
             if(beginNewAccept)
@@ -136,10 +136,19 @@ namespace Svt.Network
                     {
                         if (ProtocolStrategy != null)
                         {
-                            if (ProtocolStrategy.Encoding != null)
-                                ProtocolStrategy.Parse(ProtocolStrategy.Encoding.GetString(state.ReadBuffer, 0, len), state);
-                            else
-                                ProtocolStrategy.Parse(state.ReadBuffer, len, state);
+							if (ProtocolStrategy.Encoding != null)
+							{
+								if (state.Decoder == null)
+									state.Decoder = ProtocolStrategy.Encoding.GetDecoder();
+
+								int charCount = state.Decoder.GetCharCount(state.ReadBuffer, 0, len);
+								char[] chars = new char[charCount];
+								state.Decoder.GetChars(state.ReadBuffer, 0, len, chars, 0);
+								string msg = new string(chars);
+								ProtocolStrategy.Parse(msg, state);
+							}
+							else
+								ProtocolStrategy.Parse(state.ReadBuffer, len, state);
                         }
                     }
                     catch { }
@@ -309,6 +318,19 @@ namespace Svt.Network
             }
         }
 
+		protected void OnClientConnected(RemoteHostState state)
+		{
+			try
+			{
+				if (ClientConnectionStateChanged != null)
+				{
+					ClientConnectionEventArgs eventargs = new ClientConnectionEventArgs(state.EndPoint.Address.ToString(), state.EndPoint.Port, true, null, true);
+					eventargs.Client = state;
+					ClientConnectionStateChanged(this, eventargs);
+				}
+			}
+			catch { }
+		}
         protected void OnClientConnectionStateChanged(IPEndPoint remoteHost, bool connected, Exception ex, bool remote)
         {
             try

@@ -292,6 +292,13 @@ namespace Svt.Network
             }
         }
 
+		public void CloseConnection()
+		{
+			//Only send notification if there actually was a connection to close
+			if (DoCloseConnection())
+				OnClosedConnection();
+		}
+
 		private void ConnectCallback(IAsyncResult ar) 
 		{
 			TcpClient client = null;
@@ -340,9 +347,19 @@ namespace Svt.Network
                     {
                         if (ProtocolStrategy != null)
                         {
-                            if (ProtocolStrategy.Encoding != null)
-                                ProtocolStrategy.Parse(ProtocolStrategy.Encoding.GetString(RemoteState.ReadBuffer, 0, len), RemoteState);
-                            else
+							if (ProtocolStrategy.Encoding != null)
+							{
+								if (RemoteState.Decoder == null)
+									RemoteState.Decoder = ProtocolStrategy.Encoding.GetDecoder();
+
+								int charCount = RemoteState.Decoder.GetCharCount(RemoteState.ReadBuffer, 0, len);
+								char[] chars = new char[charCount];
+								RemoteState.Decoder.GetChars(RemoteState.ReadBuffer, 0, len, chars, 0);
+								string msg = new string(chars);
+
+								ProtocolStrategy.Parse(msg, RemoteState);
+							}
+							else
                                 ProtocolStrategy.Parse(RemoteState.ReadBuffer, len, RemoteState);
                         }
                     }
@@ -462,7 +479,18 @@ namespace Svt.Network
         }
         #endregion
 
-        private bool DoCloseConnection()
+        protected void OnOpenedConnection()
+		{
+            try
+            {
+                //Signal that we got connected
+                if (ConnectionStateChanged != null)
+                    ConnectionStateChanged(this, new ConnectionEventArgs(Hostname, Port, true));
+            }
+            catch { }
+		}
+
+		private bool DoCloseConnection()
         {
             if(RemoteState != null)
             {
@@ -475,24 +503,6 @@ namespace Svt.Network
             else 
                 return false;
         }
-
-        public void CloseConnection()
-        {
-            //Only send notification if there actually was a connection to close
-            if (DoCloseConnection())
-                OnClosedConnection();
-        }
-        
-        protected void OnOpenedConnection()
-		{
-            try
-            {
-                //Signal that we got connected
-                if (ConnectionStateChanged != null)
-                    ConnectionStateChanged(this, new ConnectionEventArgs(Hostname, Port, true));
-            }
-            catch { }
-		}
 
         protected void OnClosedConnection()
         {
