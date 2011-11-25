@@ -168,11 +168,11 @@ namespace Svt.Caspar.AMCP
 			get { return System.Text.Encoding.UTF8; }
 		}
 
-		public void Parse(string data)
+		public void Parse(string data, Svt.Network.RemoteHostState state)
 		{
 			parser_.Parse(data);
 		}
-        public void Parse(byte[] data, int length) { throw new NotImplementedException(); }
+		public void Parse(byte[] data, int length, Svt.Network.RemoteHostState state) { throw new NotImplementedException(); }
 
 		#endregion
 	}
