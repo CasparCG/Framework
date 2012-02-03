@@ -1,0 +1,15 @@
+﻿package caspar.network.data
+{
+	public class CasparItemInfoCollection
+	{
+		private var _itemList : Array;
+
+		public function CasparItemInfoCollection (itemList:Array);
+
+		public function getItems () : Array;
+
+		public function getItemsInFolder (folder:String) : Array;
+
+		public function getFolders () : Array;
+	}
+}

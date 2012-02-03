@@ -1,0 +1,46 @@
+﻿package caspar.network
+{
+	import caspar.network.data.CasparItemInfoCollection;
+	import flash.events.Event;
+
+	/**
+	 * ...
+	 * @author Andreas Jeansson
+	 */
+	public class ServerConnectionEvent extends Event
+	{
+		/**
+		 * Returns all responses from caspar
+		 */
+		private var _command : String;
+		private var _message : String;
+		private var _data : *;
+		private var _itemList : CasparItemInfoCollection;
+
+		/**
+		 * [read-only] The command line sent to caspar
+		 */
+		public function get command () : String;
+
+		/**
+		 * [read-only] The message sent from Caspar
+		 */
+		public function get message () : String;
+
+		/**
+		 * [read-only] Contains data if the command listened to returns data.
+		 */
+		public function get data () : *;
+
+		/**
+		 * [read-only] Contains a list og
+		 */
+		public function get itemList () : CasparItemInfoCollection;
+
+		public function ServerConnectionEvent (type:String, bubbles:Boolean=false, cancelable:Boolean=false, command:String="", message:String="", data:*=null, itemList:CasparItemInfoCollection=null);
+
+		public function clone () : Event;
+
+		public function toString () : String;
+	}
+}
