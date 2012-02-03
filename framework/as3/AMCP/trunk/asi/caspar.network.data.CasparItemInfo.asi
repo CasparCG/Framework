@@ -1,0 +1,36 @@
+﻿package caspar.network.data
+{
+	public class CasparItemInfo implements ICasparItemInfo
+	{
+		private var _folder : String;
+		private var _templatename : String;
+		private var _templatepath : String;
+		private var _size : String;
+		private var _date : String;
+		private var _type : String;
+		private var _subtype : String;
+
+		public function get folder () : String;
+		public function set folder (value:String) : void;
+
+		public function get name () : String;
+		public function set name (value:String) : void;
+
+		public function get path () : String;
+		public function set path (value:String) : void;
+
+		public function get size () : String;
+		public function set size (value:String) : void;
+
+		public function get date () : String;
+		public function set date (value:String) : void;
+
+		public function get type () : String;
+		public function set type (value:String) : void;
+
+		public function get subtype () : String;
+		public function set subtype (value:String) : void;
+
+		public function CasparItemInfo ();
+	}
+}
