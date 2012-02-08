@@ -27,14 +27,14 @@ namespace Svt.Caspar
 		public CasparCGItem(string templateName, int layer, bool autoPlay)
 		{
 			TemplateName = templateName;
-			Layer = layer;
+            Layer = layer;
 			AutoPlay = autoPlay;
 		}
-		public CasparCGItem(string templateName, string templateProfile, int layer)
+        public CasparCGItem(string templateName, string templateProfile, int layer)
 		{
 			TemplateName = templateName;
 			TemplateProfile = templateProfile;
-			Layer = layer;
+            Layer = layer;
 		}
 		
 		private string templateName_ = "";
@@ -60,12 +60,18 @@ namespace Svt.Caspar
 			}
 		}
 
-		private int layer_ = 0;
+        private int layer_ = 0;
 		public int Layer
 		{
-			get { return layer_; }
-			set { layer_ = value; }
+            get { return layer_; }
+            set { layer_ = value; }
 		}
+        private int videoLayer_ = -1;
+        public int VideoLayer
+        {
+            get { return videoLayer_; }
+            set { videoLayer_ = value; }
+        }
 		private bool bAutoPlay_ = false;
 		public bool AutoPlay 
 		{
@@ -107,6 +113,10 @@ namespace Svt.Caspar
 			if (!string.IsNullOrEmpty(layerString))
 				Layer = Int32.Parse(layerString);
 
+            string videoLayerString = reader["videoLayer"];
+            if (!string.IsNullOrEmpty(videoLayerString))
+                VideoLayer = Int32.Parse(videoLayerString);
+
 			XPathDocument xpDoc = new XPathDocument(reader);
 			XPathNavigator nav = xpDoc.CreateNavigator();
 			XmlNamespaceManager nsmgr = new XmlNamespaceManager(nav.NameTable);
@@ -130,6 +140,7 @@ namespace Svt.Caspar
 			writer.WriteAttributeString("templatename", TemplateName);
 			writer.WriteAttributeString("templatefolder", TemplateProfile);
 			writer.WriteAttributeString("layer", Layer.ToString());
+            writer.WriteAttributeString("videoLayer", VideoLayer.ToString());
 			if (Data.Count > 0)
 			{
 				writer.WriteStartElement("data", Properties.Resources.CasparPlayoutSchemaURL);

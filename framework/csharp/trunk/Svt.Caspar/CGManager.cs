@@ -18,80 +18,172 @@ namespace Svt.Caspar
 			get { return channel_; }
 		}
 
+
+
+
+
 		[Obsolete("use another overload", false)]
 		public void Add(CasparCGItem item)
 		{
 			Add(item, false);
 		}
 		[Obsolete("use another overload", false)]
-		public void Add(int layer, CasparCGItem item)
+        public void Add(int layer, CasparCGItem item)
 		{
-			item.Layer = layer;
+            item.Layer = layer;
 			Add(item, false);
 		}
 		[Obsolete("use another overload", false)]
-		public void Add(int layer, CasparCGItem item, bool bPlayOnLoad)
+        public void Add(int layer, CasparCGItem item, bool bPlayOnLoad)
 		{
-			item.Layer = layer;
+            item.Layer = layer;
 			Add(item, bPlayOnLoad);
 		}
+        [Obsolete("use another overload", false)]
+        public void Add(int videoLayer, int layer, CasparCGItem item, bool bPlayOnLoad)
+        {
+            item.VideoLayer = videoLayer;
+            item.Layer = layer;
+            Add(item, bPlayOnLoad);
+        }
 		[Obsolete("use another overload", false)]
 		public void Add(CasparCGItem item, bool bPlayOnLoad)
 		{
 			bool bAutoPlay = item.AutoPlay || bPlayOnLoad;
-			Channel.Device.Server.SendString("CG " + Channel.ID + " ADD " + item.Layer + " \"" + item.TemplateIdentifier + "\" " + (bAutoPlay ? "1" : "0") + " \"" + item.XMLData + "\"");
+            if (item.VideoLayer == -1)
+                Channel.Device.Server.SendString("CG " + Channel.ID + " ADD " + item.Layer + " \"" + item.TemplateIdentifier + "\" " + (bAutoPlay ? "1" : "0") + " \"" + item.XMLData + "\"");
+            else
+                Channel.Device.Server.SendString("CG " + Channel.ID + "-" + item.VideoLayer + " ADD " + item.Layer + " \"" + item.TemplateIdentifier + "\" " + (bAutoPlay ? "1" : "0") + " \"" + item.XMLData + "\"");
 		}
 
-		public void Add(int layer, string template)
+
+
+
+
+        public void Add(int layer, string template)
 		{
-			Add(layer, template, false, string.Empty);
+            Add(layer, template, false, string.Empty);
 		}
-		public void Add(int layer, string template, bool bPlayOnLoad)
+        public void Add(int videoLayer, int layer, string template)
+        {
+            Add(videoLayer, layer, template, false, string.Empty);
+        }
+        public void Add(int layer, string template, bool bPlayOnLoad)
 		{
-			Add(layer, template, bPlayOnLoad, string.Empty);
+            Add(layer, template, bPlayOnLoad, string.Empty);
 		}
-		public void Add(int layer, string template, string data)
+        public void Add(int videoLayer, int layer, string template, bool bPlayOnLoad)
+        {
+            Add(videoLayer, layer, template, bPlayOnLoad, string.Empty);
+        }
+        public void Add(int layer, string template, string data)
 		{
-			Add(layer, template, false, data);
+            Add(layer, template, false, data);
 		}
-		public void Add(int layer, string template, bool bPlayOnLoad, string data)
+        public void Add(int videoLayer, int layer, string template, string data)
+        {
+            Add(videoLayer, layer, template, false, data);
+        }
+        public void Add(int layer, string template, bool bPlayOnLoad, string data)
 		{
-			Channel.Device.Server.SendString("CG " + Channel.ID + " ADD " + layer + " \"" + template + "\" " + (bPlayOnLoad ? "1" : "0") + " \"" + (!string.IsNullOrEmpty(data) ? data: string.Empty) + "\"");
+            Channel.Device.Server.SendString("CG " + Channel.ID + " ADD " + layer + " \"" + template + "\" " + (bPlayOnLoad ? "1" : "0") + " \"" + (!string.IsNullOrEmpty(data) ? data : string.Empty) + "\"");
 		}
+        public void Add(int videoLayer, int layer, string template, bool bPlayOnLoad, string data)
+        {
+            Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " ADD " + layer + " \"" + template + "\" " + (bPlayOnLoad ? "1" : "0") + " \"" + (!string.IsNullOrEmpty(data) ? data : string.Empty) + "\"");
+        }
 
 		public void Add(int layer, string template, ICGDataContainer data)
 		{
 			Add(layer, template, false, data);
 		}
-		public void Add(int layer, string template, bool bPlayOnLoad, ICGDataContainer data)
+        public void Add(int videoLayer, int layer, string template, ICGDataContainer data)
+        {
+            Add(videoLayer, layer, template, false, data);
+        }
+        public void Add(int layer, string template, bool bPlayOnLoad, ICGDataContainer data)
+        {
+            Channel.Device.Server.SendString("CG " + Channel.ID + " ADD " + layer + " \"" + template + "\" " + (bPlayOnLoad ? "1" : "0") + " \"" + ((data != null) ? data.ToAMCPEscapedXml() : string.Empty) + "\"");
+        }
+		public void Add(int videoLayer, int layer, string template, bool bPlayOnLoad, ICGDataContainer data)
 		{
-			Channel.Device.Server.SendString("CG " + Channel.ID + " ADD " + layer + " \"" + template + "\" " + (bPlayOnLoad ? "1" : "0") + " \"" + ((data!=null) ? data.ToAMCPEscapedXml() : string.Empty) + "\"");
+			Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " ADD " + layer + " \"" + template + "\" " + (bPlayOnLoad ? "1" : "0") + " \"" + ((data!=null) ? data.ToAMCPEscapedXml() : string.Empty) + "\"");
 		}
 
-		public void Remove(int layer)
+
+
+
+
+
+
+        public void Remove(int layer)
 		{
-			Channel.Device.Server.SendString("CG " + Channel.ID + " REMOVE " + layer);
+            Channel.Device.Server.SendString("CG " + Channel.ID + " REMOVE " + layer);
 		}
+        public void Remove(int videoLayer, int layer)
+        {
+            Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " REMOVE " + layer);
+        }
+
+
+
+
+
 		
 		public void Clear()
 		{
 			Channel.Device.Server.SendString("CG " + Channel.ID + " CLEAR");
 		}
+        public void Clear(int videoLayer)
+        {
+            Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " CLEAR");
+        }
 
-		public void Play(int layer)
-		{
-			Channel.Device.Server.SendString("CG " + Channel.ID + " PLAY " + layer);
-		}
 
-		public void Stop(int layer)
-		{
-			Channel.Device.Server.SendString("CG " + Channel.ID + " STOP " + layer);
-		}
 
-		public void Next(int layer)
+
+
+
+        public void Play(int layer)
 		{
-			Channel.Device.Server.SendString("CG " + Channel.ID + " NEXT " + layer);
+            Channel.Device.Server.SendString("CG " + Channel.ID + " PLAY " + layer);
 		}
+        public void Play(int videoLayer, int layer)
+        {
+            Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " PLAY " + layer);
+        }
+
+
+
+
+
+
+        public void Stop(int layer)
+		{
+            Channel.Device.Server.SendString("CG " + Channel.ID + " STOP " + layer);
+		}
+        public void Stop(int videoLayer, int layer)
+        {
+            Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " STOP " + layer);
+        }
+
+
+
+
+
+        public void Next(int layer)
+		{
+            Channel.Device.Server.SendString("CG " + Channel.ID + " NEXT " + layer);
+		}
+        public void Next(int videoLayer, int layer)
+        {
+            Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " NEXT " + layer);
+        }
+
+
+
+
+
 
 		[Obsolete("this command is no longer supported", true)]
 		public void Prev(int layer)
