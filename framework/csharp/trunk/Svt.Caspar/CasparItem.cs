@@ -12,6 +12,11 @@ namespace Svt.Caspar
 		{
 			clipname_ = clipname;
 		}
+        public CasparItem(int videoLayer, string clipname)
+        {
+            videoLayer_ = videoLayer;
+            clipname_ = clipname;
+        }
 		public CasparItem(string clipname, Transition transition)
 		{
 			clipname_ = clipname;
@@ -21,6 +26,16 @@ namespace Svt.Caspar
 				transition_.Duration = transition.Duration;
 			}
 		}
+        public CasparItem(int videoLayer, string clipname, Transition transition)
+        {
+            videoLayer_ = videoLayer;
+            clipname_ = clipname;
+            if (transition != null)
+            {
+                transition_.Type = transition.Type;
+                transition_.Duration = transition.Duration;
+            }
+        }
 
 		public static CasparItem Create(System.Xml.XmlReader reader)
 		{
@@ -44,6 +59,12 @@ namespace Svt.Caspar
 			get { return loop_; }
 			set { loop_ = value; }
 		}
+        private int videoLayer_ = -1;
+        public int VideoLayer
+        {
+            get { return videoLayer_; }
+            set { videoLayer_ = value; }
+        }
 
 		private Transition transition_ = new Transition();
 		public Transition Transition
@@ -65,6 +86,10 @@ namespace Svt.Caspar
 				Clipname = clipname;
 			else
 				Clipname = "";
+
+            string videoLayer = reader["videoLayer"];
+            if (!string.IsNullOrEmpty(videoLayer))
+                VideoLayer = Int32.Parse(videoLayer);
 
 			string loop = reader["loop"];
 			bool bLoop = false;
@@ -91,7 +116,8 @@ namespace Svt.Caspar
 		{
 			writer.WriteStartElement("item", Properties.Resources.CasparPlayoutSchemaURL);
 			writer.WriteAttributeString("clipname", Clipname);
-			writer.WriteAttributeString("loop", Loop.ToString());
+            writer.WriteAttributeString("videoLayer", VideoLayer.ToString());
+			writer.WriteAttributeString("loop", Loop.ToString());          
 
 			writer.WriteStartElement("transition");
 			writer.WriteAttributeString("type", Transition.Type.ToString());

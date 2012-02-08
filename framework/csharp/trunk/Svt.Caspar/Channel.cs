@@ -58,15 +58,37 @@ namespace Svt.Caspar
 			Device.Server.SendString("LOAD " + ID + "  " + clipname + (string)(loop ? " LOOP" : ""));
 			return true;
 		}
+        public bool Load(int videoLayer, string clipname, bool loop)
+        {
+            if (videoLayer == -1)
+                Load(clipname, loop);
+            else
+                Device.Server.SendString("LOAD " + ID + "-" + videoLayer + "  " + clipname + (string)(loop ? " LOOP" : ""));
+
+            return true;
+        }
 		public bool Load(CasparItem item)
 		{
-			Device.Server.SendString("LOAD " + ID + "  " + item.Clipname + (string)(item.Loop ? " LOOP" : ""));
+            if (item.VideoLayer == -1)
+                Device.Server.SendString("LOAD " + ID + "  " + item.Clipname + (string)(item.Loop ? " LOOP" : ""));
+            else
+			    Device.Server.SendString("LOAD " + ID + "-" + item.VideoLayer + "  " + item.Clipname + (string)(item.Loop ? " LOOP" : ""));
 			return true;
 		}
+       
+
+
+
+
+
 
 		public bool LoadBG(CasparItem item)
 		{
-			Device.Server.SendString("LOADBG " + ID + "  " + item.Clipname + (string)(item.Loop ? " LOOP" : "") + " " + item.Transition);
+            if (item.VideoLayer == -1)
+			    Device.Server.SendString("LOADBG " + ID + "  " + item.Clipname + (string)(item.Loop ? " LOOP" : "") + " " + item.Transition);
+            else
+                Device.Server.SendString("LOADBG " + ID + "-" + item.VideoLayer + "  " + item.Clipname + (string)(item.Loop ? " LOOP" : "") + " " + item.Transition);
+
 			return true;
 		}
 		public bool LoadBG(string clipname, bool loop, TransitionType transition, uint transitionDuration)
@@ -74,21 +96,50 @@ namespace Svt.Caspar
 			Device.Server.SendString("LOADBG " + ID + "  " + clipname + (string)(loop ? " LOOP" : "") + " " + transition.ToString() + " " + transitionDuration.ToString());
 			return true;
 		}
+        public bool LoadBG(int videoLayer, string clipname, bool loop, TransitionType transition, uint transitionDuration)
+        {
+            if (videoLayer == -1)
+                LoadBG(clipname, loop, transition, transitionDuration);
+            else
+                Device.Server.SendString("LOADBG " + ID + "-" + videoLayer + "  " + clipname + (string)(loop ? " LOOP" : "") + " " + transition.ToString() + " " + transitionDuration.ToString());
+            return true;
+        }
 
 		public void Play()
 		{
 			Device.Server.SendString("PLAY " + ID);
 		}
+        public void Play(int videoLayer)
+        {
+            if (videoLayer == -1)
+                Play();
+            else
+                Device.Server.SendString("PLAY " + ID + "-" + videoLayer);
+        }
 
 		public void Stop()
 		{
 			Device.Server.SendString("STOP " + ID);
 		}
+        public void Stop(int videoLayer)
+        {
+            if (videoLayer == -1)
+                Stop();
+            else
+                Device.Server.SendString("STOP " + ID + "-" + videoLayer);
+        }
 
 		public void Clear()
 		{
 			Device.Server.SendString("CLEAR " + ID);
 		}
+        public void Clear(int videoLayer)
+        {
+            if (videoLayer == -1)
+                Clear();
+            else
+                Device.Server.SendString("CLEAR " + ID + "-" + videoLayer);
+        }
 
 		public void SetMode(VideoMode mode)
 		{

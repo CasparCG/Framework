@@ -91,7 +91,7 @@ namespace Svt.Caspar
         public void Add(int videoLayer, int layer, string template, bool bPlayOnLoad, string data)
         {
             if (videoLayer == -1)
-                Channel.Device.Server.SendString("CG " + Channel.ID + " ADD " + layer + " \"" + template + "\" " + (bPlayOnLoad ? "1" : "0") + " \"" + (!string.IsNullOrEmpty(data) ? data : string.Empty) + "\"");
+                Add(layer, template, bPlayOnLoad, data);
             else
                 Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " ADD " + layer + " \"" + template + "\" " + (bPlayOnLoad ? "1" : "0") + " \"" + (!string.IsNullOrEmpty(data) ? data : string.Empty) + "\"");
         }
@@ -111,9 +111,9 @@ namespace Svt.Caspar
 		public void Add(int videoLayer, int layer, string template, bool bPlayOnLoad, ICGDataContainer data)
 		{
             if (videoLayer == -1)
-                Channel.Device.Server.SendString("CG " + Channel.ID + " ADD " + layer + " \"" + template + "\" " + (bPlayOnLoad ? "1" : "0") + " \"" + ((data != null) ? data.ToAMCPEscapedXml() : string.Empty) + "\"");
+                Add(layer, template, bPlayOnLoad, data);
             else
-			    Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " ADD " + layer + " \"" + template + "\" " + (bPlayOnLoad ? "1" : "0") + " \"" + ((data!=null) ? data.ToAMCPEscapedXml() : string.Empty) + "\"");
+                Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " ADD " + layer + " \"" + template + "\" " + (bPlayOnLoad ? "1" : "0") + " \"" + ((data != null) ? data.ToAMCPEscapedXml() : string.Empty) + "\"");
 		}
 
 
@@ -129,7 +129,7 @@ namespace Svt.Caspar
         public void Remove(int videoLayer, int layer)
         {
             if (videoLayer == -1)
-                Channel.Device.Server.SendString("CG " + Channel.ID + " REMOVE " + layer);
+                Remove(layer);
             else
                 Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " REMOVE " + layer);
         }
@@ -146,7 +146,7 @@ namespace Svt.Caspar
         public void Clear(int videoLayer)
         {
             if (videoLayer == -1)
-                Channel.Device.Server.SendString("CG " + Channel.ID + " CLEAR");
+                Clear();
             else
                 Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " CLEAR");
         }
@@ -163,7 +163,7 @@ namespace Svt.Caspar
         public void Play(int videoLayer, int layer)
         {
             if (videoLayer == -1)
-                Channel.Device.Server.SendString("CG " + Channel.ID + " PLAY " + layer);
+                Play(layer);
             else
                 Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " PLAY " + layer);
         }
@@ -180,7 +180,7 @@ namespace Svt.Caspar
         public void Stop(int videoLayer, int layer)
         {
             if (videoLayer == -1)
-                Channel.Device.Server.SendString("CG " + Channel.ID + " STOP " + layer);
+                Stop(layer);
             else
                 Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " STOP " + layer);
         }
@@ -196,7 +196,7 @@ namespace Svt.Caspar
         public void Next(int videoLayer, int layer)
         {
             if (videoLayer == -1)
-                Channel.Device.Server.SendString("CG " + Channel.ID + " NEXT " + layer);
+                Next(layer);
             else
                 Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " NEXT " + layer);
         }
@@ -206,37 +206,54 @@ namespace Svt.Caspar
 
 
 
-		[Obsolete("this command is no longer supported", true)]
-		public void Prev(int layer)
-		{
-			Channel.Device.Server.SendString("CG " + Channel.ID + " PREV " + layer);
-		}
-
-		[Obsolete("this command is no longer supported", true)]
-		public void Goto(int layer, string label)
-		{
-			Channel.Device.Server.SendString("CG " + Channel.ID + " GOTO " + layer + " " + label);
-		}
-
-		[Obsolete("use ICGDataContainer instead", false)]
-		public void Update(CasparCGItem item)
-		{
-			Channel.Device.Server.SendString("CG " + Channel.ID + " UPDATE " + item.Layer + " " + " \"" + item.XMLData + "\"");
-		}
 		public void Update(int layer, ICGDataContainer data)
 		{
 			Channel.Device.Server.SendString("CG " + Channel.ID + " UPDATE " + layer + " " + " \"" + data.ToAMCPEscapedXml() + "\"");
 		}
+        public void Update(int videoLayer, int layer, ICGDataContainer data)
+        {
+            if (videoLayer == -1)
+                Update(layer, data);
+            else
+                Channel.Device.Server.SendString("CG " + Channel.ID + " UPDATE " + layer + " " + " \"" + data.ToAMCPEscapedXml() + "\"");
+        }
+
+
+
+
+
+
+
+
 
 		public void Invoke(int layer, string method)
 		{
 			Channel.Device.Server.SendString("CG " + Channel.ID + " INVOKE " + layer + " " + method);
 		}
+        public void Invoke(int videoLayer, int layer, string method)
+        {
+            if (videoLayer == -1)
+                Invoke(layer, method);
+            else
+                Channel.Device.Server.SendString("CG " + Channel.ID + " INVOKE " + layer + " " + method);
+        }
+
+
+
+
+
 
 		public void Info()
 		{
 			Channel.Device.Server.SendString("CG " + Channel.ID + " INFO");
 		}
+        public void Info(int videoLayer)
+        {
+            if (videoLayer == -1)
+                Info();
+            else
+                Channel.Device.Server.SendString("CG " + Channel.ID + " INFO");
+        }
 	}
     	
 	public interface ICGDataContainer
