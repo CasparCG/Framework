@@ -29,7 +29,7 @@ package se.svt.caspar
 	 * @author Andreas Jeansson, Sveriges Television AB
 	 */
 	
-	 //TODO: Needs to be rewritten, should use only a (modified) version of shared data. Check on backward-compability.
+	 //TODO: Needs! to be rewritten, should use only a (modified) version of shared data. Check on backward-compability.
 	public class CommunicationManager implements ICommunicationManager
 	{
 		//Holds the SharedData instance
