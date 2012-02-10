@@ -36,16 +36,19 @@ package se.svt.caspar.templateHost
 	 //BUG: Lägger ej på mallar efter smäll...
 	public class ExternalCommandsBuffer extends EventDispatcher
 	{		
-		//Time out for a command to execute, in milliseconds
-		private const COMMAND_TIME_OUT:Number = 10000;
+		//Time out for a command to execute, in milliseconds, 0 to bypass
+		private const COMMAND_TIME_OUT:Number = 0;
 		private var _bufferedCommands:Vector.<IExternalCommand>;
 		private var _timer:Timer;
 		
 		public function ExternalCommandsBuffer():void
 		{
 			_bufferedCommands = new Vector.<IExternalCommand>();
-			_timer = new Timer(COMMAND_TIME_OUT, 1);
-			_timer.addEventListener(TimerEvent.TIMER, onCommandTimeout);
+			if (COMMAND_TIME_OUT > 0)
+			{
+				_timer = new Timer(COMMAND_TIME_OUT, 1);
+				_timer.addEventListener(TimerEvent.TIMER, onCommandTimeout);
+			}
 		}
 		
 		/**
@@ -70,8 +73,11 @@ package se.svt.caspar.templateHost
 		{
 			try
 			{
-				_timer.reset();
-				_timer.start();
+				if (_timer != null)
+				{
+					_timer.reset();
+					_timer.start();
+				}
 				command.execute();
 			}
 			catch (e:Error)
@@ -129,7 +135,10 @@ package se.svt.caspar.templateHost
 		private function onFinished(e:CommandEvent):void 
 		{
 			trace("->command finished: ", _bufferedCommands[0]);
-			_timer.stop();
+			if (_timer != null)
+			{
+				_timer.stop();
+			}
 			if (e.success) dispatchEvent(e);
 			_bufferedCommands[0].removeEventListener(CommandEvent.ON_ERROR, onCommandError);
 			_bufferedCommands[0].removeEventListener(CommandEvent.COMMAND_FINISHED, onFinished);
