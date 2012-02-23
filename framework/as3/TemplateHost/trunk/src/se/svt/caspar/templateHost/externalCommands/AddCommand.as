@@ -201,6 +201,8 @@ package se.svt.caspar.templateHost.externalCommands
 
 				version = template.version;
 				
+				_templateHost.registerTemplate(template);
+				
 				template.initialize(_templateContext);
 				
 				if (_invoke != "")
@@ -274,8 +276,10 @@ package se.svt.caspar.templateHost.externalCommands
 				_templateHost.loadedTemplates.templateIsLoaded(template, _layer);
 
 				template.movieClip.stop();
+				
+				//template.movieClip.loader = _loader;
 								
-				_templateHost.registerTemplate(template);
+				
 				
 			} 
 			catch (e:Error) 

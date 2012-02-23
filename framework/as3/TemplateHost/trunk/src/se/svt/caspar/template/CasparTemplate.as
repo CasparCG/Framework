@@ -253,9 +253,16 @@ package se.svt.caspar.template {
 		 */
 		public function TraceToLog(message:String):void 
 		{
-			var e:CasparTemplateEvent = new CasparTemplateEvent(CasparTemplateEvent.TRACE_TO_LOG, this);
-			e.message = message;
-			dispatchEvent(e);
+			try
+			{
+				var e:CasparTemplateEvent = new CasparTemplateEvent(CasparTemplateEvent.TRACE_TO_LOG, this);
+				e.message = message;
+				dispatchEvent(e);
+			}
+			catch (e:Error)
+			{
+				trace(e);
+			}
 		}
 
 		/**

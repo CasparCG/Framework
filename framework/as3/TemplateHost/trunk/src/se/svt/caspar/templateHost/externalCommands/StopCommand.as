@@ -42,7 +42,7 @@ package se.svt.caspar.templateHost.externalCommands
 		public function StopCommand(layers:Array, mixOutDuration:uint, templateContainer:Sprite, templateHost:ITemplateHost) 
 		{
 			_layers = layers;
-			_mixOutDuration = 0;
+			if(mixOutDuration > 0) _mixOutDuration = 1;
 			_templateContainer = templateContainer;
 			_templateHost = templateHost;
 			_successLayers = [];
@@ -68,6 +68,10 @@ package se.svt.caspar.templateHost.externalCommands
 						if (_mixOutDuration == 0) 
 						{
 							template.Stop();
+						}
+						else if (_mixOutDuration == 1)
+						{
+							removeTemplate(template);
 						}
 						else 
 						{
