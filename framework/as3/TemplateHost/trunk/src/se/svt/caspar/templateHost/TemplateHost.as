@@ -631,7 +631,7 @@ package se.svt.caspar.templateHost
 				trace("it is an non error type");
             }
         }
-		
+		//TODO: investigate unloadAndStop
 		public function removeTemplate(template:ICasparTemplate):void 
 		{	
 			
@@ -643,6 +643,7 @@ package se.svt.caspar.templateHost
 			{	
 				try
 				{
+					//removeListeners(template.movieClip.);
 					stopMovieClips(template.movieClip);
 					template.dispose();
 					deleteChildren(template.movieClip);
@@ -653,7 +654,6 @@ package se.svt.caspar.templateHost
 					error = "@removeTemplate@" + template.layer + "@#1:" + e;
 					dispatchEvent(new CommandEvent(CommandEvent.ON_ERROR, template.layer, error));
 				}
-				
 				try
 				{
 					_communicationManager.unregisterTemplate(template);
@@ -697,6 +697,11 @@ package se.svt.caspar.templateHost
 			
 			if (success) dispatchEvent(new CommandEvent(CommandEvent.COMMAND_FINISHED, 0, "@RemoveTemplate@" + layer,  true));
 		}		
+		
+		//private function removeListeners(movieClip:MovieClip):void 
+		//{
+			//for (var i:int = 0; i < movieClip.listeners.length)
+		//}
 		
 		private function stopMovieClips(movieClip:MovieClip):void
 		{

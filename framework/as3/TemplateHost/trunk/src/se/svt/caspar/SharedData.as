@@ -100,19 +100,27 @@ package se.svt.caspar
 			return false;
 		}
 		
+		//TODO: Possibility to add subscriber on non existing keys
 		public function addSubscriber(subscriber:IRegisteredDataSharer, id:String):void 
 		{
-			if (_sharedDataItems[id].addSubscriber(subscriber))
+			try
 			{
-				if (_subscribers[subscriber] != undefined)
+				if (_sharedDataItems[id].addSubscriber(subscriber))
 				{
-					_subscribers[subscriber].push(id);
+					if (_subscribers[subscriber] != undefined)
+					{
+						_subscribers[subscriber].push(id);
+					}
+					else 
+					{
+						_subscribers[subscriber] = [id];
+						_subscriberCounter++;
+					}
 				}
-				else 
-				{
-					_subscribers[subscriber] = [id];
-					_subscriberCounter++;
-				}
+			}
+			catch (e:Error)
+			{
+				trace("SharedData Error: Cannot subscribe to non existing key, use write data first.");
 			}
 		}
 		
