@@ -51,6 +51,7 @@ package se.svt.caspar.templateHost
 	import se.svt.caspar.templateHost.externalCommands.PlayCommand;
 	import se.svt.caspar.templateHost.externalCommands.SetDataCommand;
 	import se.svt.caspar.templateHost.externalCommands.StopCommand;
+	import se.svt.caspar.Version;
 
 	/**
 	 * ...
@@ -60,7 +61,6 @@ package se.svt.caspar.templateHost
 	{
 
 		//CONSTANTS
-		public static const VERSION:String = "2.0 BETA2";
 		public static const WIDE_SCREEN:Number = 16/9;
 		public static const STANDARD:Number = 4 / 3;
 		private var SCREEN_WIDTH:Number;
@@ -103,8 +103,8 @@ package se.svt.caspar.templateHost
 			SCREEN_HEIGHT = stage.stageHeight;
 			ORIGINAL_FRAMERATE = stage.frameRate;
 			
-			trace(ORIGINAL_FRAMERATE);
-			trace("-> CasparCG Template Host v."+VERSION+ " @"+SCREEN_WIDTH+"X"+ SCREEN_HEIGHT + " " + stage.frameRate+"fps");
+			
+			//trace("-> CasparCG Template Host v."+VERSION+ " @"+SCREEN_WIDTH+"X"+ SCREEN_HEIGHT + " " + stage.frameRate+"fps");
 			_communicationManager = new CommunicationManager();
 			_externalCommandsBuffer = new ExternalCommandsBuffer();
 			_mixer = new Mixer();
@@ -136,6 +136,8 @@ package se.svt.caspar.templateHost
 			
 			//Listen for uncaught errors
 			this.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, onUncaughtError);
+			
+			trace(GetInfo());
 		}
 		
 		
@@ -244,8 +246,9 @@ package se.svt.caspar.templateHost
 		public function GetInfo():String 
 		{
 			onCommandRecieved("@GetInfo@?");
+			
 			//Build layer info xml
-			var infoXML:XML = new XML(<TemplateHostInfo version={VERSION} width={SCREEN_WIDTH} height={SCREEN_HEIGHT} fps={stage.frameRate} totalMemory={System.totalMemoryNumber} freeMemory={System.freeMemory} loadedTemplates={_loadedTemplates.numberOfLoadedTemplates}></TemplateHostInfo>);
+			var infoXML:XML = new XML(<TemplateHostInfo version={Version.getVersion()} width={SCREEN_WIDTH} height={SCREEN_HEIGHT} fps={stage.frameRate} totalMemory={System.totalMemoryNumber} freeMemory={System.freeMemory} loadedTemplates={_loadedTemplates.numberOfLoadedTemplates}></TemplateHostInfo>);
 			var layers:XML = new XML(<Layers></Layers>);
 			if (_loadedTemplates != null) 
 			{
