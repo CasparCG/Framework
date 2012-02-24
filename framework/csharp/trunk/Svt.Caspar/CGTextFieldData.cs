@@ -21,7 +21,7 @@ namespace Svt.Caspar
         public void ToAMCPEscapedXml(StringBuilder sb)
         {
             sb.Append("<data id=\\\"text\\\" value=\\\"");
-            string escapedValue = string.IsNullOrEmpty(Data) ? string.Empty : Data.Replace("\"", "&quot;").Replace("<", "&lt;").Replace(">", "&gt;");
+            string escapedValue = string.IsNullOrEmpty(Data) ? string.Empty : Data.Replace("\"", "&quot;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\\", "\\\\");
             sb.Append(escapedValue);
             sb.Append("\\\" />");
         }
