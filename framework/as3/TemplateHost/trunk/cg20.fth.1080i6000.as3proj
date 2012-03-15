@@ -78,7 +78,7 @@
     <!-- example: <hidden path="..." /> -->
   </hiddenPaths>
   <!-- Executed before build -->
-  <preBuildCommand />
+  <preBuildCommand>SubWCRev "$(ProjectDir)" "$(ProjectDir)/src/se/svt/caspar/Version.tmpl" "$(ProjectDir)/src/se/svt/caspar/Version.as"</preBuildCommand>
   <!-- Executed after build -->
   <postBuildCommand alwaysRun="False" />
   <!-- Other project options -->
