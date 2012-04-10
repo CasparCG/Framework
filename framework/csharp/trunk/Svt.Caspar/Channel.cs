@@ -81,9 +81,9 @@ namespace Svt.Caspar
 
 
 
-
 		public bool LoadBG(CasparItem item)
 		{
+            item.Clipname = '"' + item.Clipname.Replace("\\", "\\\\") + '"';
             if (item.VideoLayer == -1)
 			    Device.Server.SendString("LOADBG " + ID + "  " + item.Clipname + (string)(item.Loop ? " LOOP" : "") + " " + item.Transition);
             else
@@ -91,17 +91,54 @@ namespace Svt.Caspar
 
 			return true;
 		}
-		public bool LoadBG(string clipname, bool loop, TransitionType transition, uint transitionDuration)
-		{
-			Device.Server.SendString("LOADBG " + ID + "  " + clipname + (string)(loop ? " LOOP" : "") + " " + transition.ToString() + " " + transitionDuration.ToString());
-			return true;
-		}
-        public bool LoadBG(int videoLayer, string clipname, bool loop, TransitionType transition, uint transitionDuration)
+        public bool LoadBG(int videoLayer, string clipname, bool loop)
         {
+            clipname = '"' + clipname.Replace("\\", "\\\\") + '"';
             if (videoLayer == -1)
-                LoadBG(clipname, loop, transition, transitionDuration);
+                Device.Server.SendString("LOADBG " + ID + "  " + clipname + (string)(loop ? " LOOP" : ""));
+            else
+                Device.Server.SendString("LOADBG " + ID + "-" + videoLayer + "  " + clipname + (string)(loop ? " LOOP" : ""));
+           
+            return true;
+        }
+        public bool LoadBG(int videoLayer, string clipname, bool loop, uint seek, uint length)
+        {
+            clipname = '"' + clipname.Replace("\\", "\\\\") + '"';
+            if (videoLayer == -1)
+                Device.Server.SendString("LOADBG " + ID + "  " + clipname + (string)(loop ? " LOOP" : "") + " SEEK " + seek.ToString() + " LENGTH " + length.ToString());
+            else
+                Device.Server.SendString("LOADBG " + ID + "-" + videoLayer + "  " + clipname + (string)(loop ? " LOOP" : "") + " SEEK " + seek.ToString() + " LENGTH " + length.ToString());
+
+            return true;
+        }
+        public bool LoadBG(int videoLayer, string clipname, bool loop, TransitionType transition, uint transitionDuration)
+		{
+            clipname = '"' + clipname.Replace("\\", "\\\\") + '"';
+            if (videoLayer == -1)
+			    Device.Server.SendString("LOADBG " + ID + "  " + clipname + (string)(loop ? " LOOP" : "") + " " + transition.ToString() + " " + transitionDuration.ToString());
             else
                 Device.Server.SendString("LOADBG " + ID + "-" + videoLayer + "  " + clipname + (string)(loop ? " LOOP" : "") + " " + transition.ToString() + " " + transitionDuration.ToString());
+
+			return true;
+		}
+        public bool LoadBG(int videoLayer, string clipname, bool loop, TransitionType transition, uint transitionDuration, TransitionDirection direction)
+        {
+            clipname = '"' + clipname.Replace("\\", "\\\\") + '"';
+            if (videoLayer == -1)
+                Device.Server.SendString("LOADBG " + ID + "  " + clipname + (string)(loop ? " LOOP" : "") + " " + transition.ToString() + " " + transitionDuration.ToString() + " " + direction.ToString());
+            else
+                Device.Server.SendString("LOADBG " + ID + "-" + videoLayer + "  " + clipname + (string)(loop ? " LOOP" : "") + " " + transition.ToString() + " " + transitionDuration.ToString() + " " + direction.ToString());
+
+            return true;
+        }
+        public bool LoadBG(int videoLayer, string clipname, bool loop, TransitionType transition, uint transitionDuration, TransitionDirection direction, uint seek, uint length)
+        {
+            clipname = '"' + clipname.Replace("\\", "\\\\") + '"';
+            if (videoLayer == -1)
+                Device.Server.SendString("LOADBG " + ID + "  " + clipname + (string)(loop ? " LOOP" : "") + " " + transition.ToString() + " " + transitionDuration.ToString() + " " + direction.ToString() + " SEEK " + seek.ToString() + " LENGTH " + length.ToString());
+            else
+                Device.Server.SendString("LOADBG " + ID + "-" + videoLayer + "  " + clipname + (string)(loop ? " LOOP" : "") + " " + transition.ToString() + " " + transitionDuration.ToString() + " " + direction.ToString() + " SEEK " + seek.ToString() + " LENGTH " + length.ToString());
+
             return true;
         }
 

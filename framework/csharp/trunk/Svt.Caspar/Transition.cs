@@ -12,11 +12,19 @@ namespace Svt.Caspar
 		SLIDE,
 		WIPE
 	}
+
+    public enum TransitionDirection
+    {
+        LEFT,
+        RIGHT
+    }
+
 	public class Transition
 	{
 		public Transition()
 		{
 			type_ = TransitionType.CUT;
+            direction_ = TransitionDirection.RIGHT;
 			duration_ = 0;
 		}
 		public Transition(TransitionType type, int duration)
@@ -24,6 +32,13 @@ namespace Svt.Caspar
 			type_ = type;
 			duration_ = duration;
 		}
+
+        private TransitionDirection direction_;
+        public TransitionDirection Direction
+        {
+            get { return direction_; }
+            set { direction_ = value; }
+        }
 
 		private TransitionType type_;
 		public TransitionType Type
@@ -40,7 +55,7 @@ namespace Svt.Caspar
 
 		public override string ToString()
 		{
-			return Type.ToString() + " " + duration_.ToString();
+            return Type.ToString() + " " + duration_.ToString() + direction_.ToString();
 		}
 	}
 }
