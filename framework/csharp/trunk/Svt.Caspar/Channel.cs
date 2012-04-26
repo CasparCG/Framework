@@ -131,6 +131,17 @@ namespace Svt.Caspar
 
             return true;
         }
+        public bool LoadBG(int videoLayer, string clipname, bool loop, TransitionType transition, uint transitionDuration, TransitionDirection direction, int seek)
+        {
+            clipname = '"' + clipname.Replace("\\", "\\\\") + '"';
+            if (videoLayer == -1)
+                Device.Server.SendString("LOADBG " + ID + "  " + clipname + (string)(loop ? " LOOP" : "") + " " + transition.ToString() + " " + transitionDuration.ToString() + " " + direction.ToString());
+            else
+                Device.Server.SendString("LOADBG " + ID + "-" + videoLayer + "  " + clipname + (string)(loop ? " LOOP" : "") + " " + transition.ToString() + " " + transitionDuration.ToString() + " " + direction.ToString() + " SEEK " + seek);
+
+            return true;
+
+        }
         public bool LoadBG(int videoLayer, string clipname, bool loop, TransitionType transition, uint transitionDuration, TransitionDirection direction, uint seek, uint length)
         {
             clipname = '"' + clipname.Replace("\\", "\\\\") + '"';
