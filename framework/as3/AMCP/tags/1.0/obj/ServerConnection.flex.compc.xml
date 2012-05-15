@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<flex-config xmlns="http://www.adobe.com/2006/flex-config">
+  <output>C:\Lokala Filer\svn\casparcg\frameworks\as3\AMCP\trunk\.\bin\CasparCGServerConnection-v1.0.0.swc</output>
+  <use-network>true</use-network>
+  <target-player>10.0</target-player>
+  <warnings>true</warnings>
+  <benchmark>false</benchmark>
+  <compiler>
+    <accessible>false</accessible>
+    <allow-source-path-overlap>false</allow-source-path-overlap>
+    <optimize>true</optimize>
+    <strict>true</strict>
+    <es>false</es>
+    <show-actionscript-warnings>true</show-actionscript-warnings>
+    <show-binding-warnings>true</show-binding-warnings>
+    <show-unused-type-selector-warnings>true</show-unused-type-selector-warnings>
+    <use-resource-bundle-metadata>true</use-resource-bundle-metadata>
+    <verbose-stacktraces>false</verbose-stacktraces>
+    <source-path>
+      <path-element>c:\lokala filer\svn\casparcg\frameworks\as3\amcp\trunk\src</path-element>
+    </source-path>
+  </compiler>
+  <include-classes>
+    <class>caspar.network.ServerConnection</class>
+    <class>caspar.network.ServerConnectionEvent</class>
+    <class>caspar.network.data.CasparItemInfo</class>
+    <class>caspar.network.data.CasparItemInfoCollection</class>
+    <class>caspar.network.data.ICasparItemInfo</class>
+  </include-classes>
+</flex-config>
