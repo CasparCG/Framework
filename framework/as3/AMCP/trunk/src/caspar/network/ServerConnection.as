@@ -12,18 +12,19 @@
 *    but WITHOUT ANY WARRANTY; without even the implied warranty of
 *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *    GNU General Public License for more details.
-
+*
 *    You should have received a copy of the GNU General Public License
 *    along with CasparCG.  If not, see <http://www.gnu.org/licenses/>.
 *
 */
 
-// TODO: What happens if caspar does not send a response? Create timeout. 
-// TODO: Check problems with disconnecting. disconnectar man verkligen?
-// TODO: What happens if connection to caspar is dropped? Testing needed. 
+// TODO: What happens if caspar does not send a response? Create timeout.
+// TODO: Check problems with disconnecting. Do you really get disconnected?
+// TODO: What happens if connection to caspar is dropped? Testing needed.
 // TODO: Check readResponse and see if we need to look for \r\n in the middle of the response.
 
-package caspar.network {
+package caspar.network
+{
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.TimerEvent;
@@ -31,13 +32,10 @@ package caspar.network {
 
 	/**
 	 * ...
-	 * @author Andreas Jeansson, SVT
+	 * @author Andreas Jeansson & Jesper Hansson, SVT
 	 */
-	
     public class ServerConnection extends EventDispatcher
 	{
-		private const RECONNECT_DELAY:int = 1000;
-		
 		public static const TRANSITION_CUT:String = "CUT";
 		public static const TRANSITION_MIX:String = "MIX";
 		public static const TRANSITION_PUSH:String = "PUSH";
@@ -48,14 +46,14 @@ package caspar.network {
 		public static const DIRECTION_FROMRIGHT:String = "FROMRIGHT";
 		
 		private const SOCKET_COMMAND_END:String = "";
+		private const RECONNECT_DELAY:int = 1000;
 		
 		private var _socket:CustomSocket;
-		
+		private var _timer:Timer;
+
 		private var _autoReconnect:Boolean = false;
 		private var _userForcedDisconnection:Boolean = false;
 		
-		private var _timer:Timer;
-
         public function ServerConnection()
 		{
 			_socket = new CustomSocket();
@@ -64,13 +62,14 @@ package caspar.network {
 		}
 		
 		///////////////////
-		//Socket commands
+		// Socket commands
 		///////////////////
 		
 		/**
 		 * Connects to a caspar server
 		 * @param	server The server name
 		 * @param	port The port number (default 5250)
+		 * @param	autoReconnect Whether or not you want to keep the connection open
 		 */
 		public function connect(server:String, port:uint = 5250, autoReconnect:Boolean = true):void
 		{
@@ -94,6 +93,9 @@ package caspar.network {
 			}
 		}
 		
+		/**
+		 * Connection status
+		 */
 		public function get connected():Boolean
 		{
 			if (_socket != null)
@@ -118,7 +120,6 @@ package caspar.network {
 				{
 					_socket.close();
 					
-					
 					/*var command:String = 'BYE' + SOCKET_COMMAND_END;
 					_socket.addCommand( { command: command, type: ServerConnection.ON_OTHER_COMMAND } );
 					*/
@@ -126,10 +127,9 @@ package caspar.network {
 			}
 		}
 		
-		
-		////////////
-		//COMMANDS//
-		////////////
+		///////////
+		// COMMANDS
+		///////////
 		
 		/**
 		 * Sends a custom command via the AMCP protocol
@@ -142,26 +142,14 @@ package caspar.network {
 			return command;
 		}
 		
-		///////////////////
-		//Play-out commands
-		///////////////////
+		/////////////////
+		// Basic Commands
+		/////////////////
 		
 		/**
-		 * Loads and prepares a clip for playout. Load stops any currently playing clip and displays the first frame of the new clip. Supply the LOOP parameter if you want the clip to loop.
+		 * Loads a clip in the background and prepares it for playout. It does not affect the currently playing clip in anyway. This is how you prepare a transition between two clips. Supply the LOOP parameter if you want the clip to loop.
 		 * @param	channel The channel
-		 * @param	file The file to load
-		 * @param	loop Loop the clip (default: false)
-		 */
-		public function LoadMedia(channel:uint, file:String, loop:Boolean = false):String 
-		{
-			var command:String = 'LOAD  ' + channel + ' \"' + file + '\" ' + (loop ? "LOOP" : "") + SOCKET_COMMAND_END;
-			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
-			return command;
-		}
-		
-		/**
-		 * Loads and prepares a clip for playout in the background. It does not affect the currently playing clip in anyway. This is how you prepare a transition between to clips. Supply the LOOP parameter if you want the clip to loop.
-		 * @param	channel The channel
+		 * @param	layer The layer you want to load the Media to
 		 * @param	file The file to load
 		 * @param	loop Loop the clip (default: false)
 		 * @param	transition The type of transition, use one of the transition contants in this class: ServerConnection.TRANSITION_CUT, ServerConnection.TRANSITION_MIX, ServerConnection.TRANSITION_PUSH, ServerConnection.TRANSITION_SLIDE, ServerConnection.TRANSITION_WIPE. (default: ServerConnection.TRANSITION_CUT)
@@ -170,50 +158,83 @@ package caspar.network {
 		 * @param	border Push, slide and wipe can have a border. (filename / #aarrggbb).
 		 * @param	borderWidth The width of the border if it’s not an image
 		 */
-		public function LoadMediaBG(channel:uint, file:String, loop:Boolean = false, transition:String = ServerConnection.TRANSITION_CUT, duration:int = 0, direction:String = ServerConnection.DIRECTION_FROMLEFT, border:String = "", borderWidth:int = 0):String 
+		public function LoadMediaBG(channel:uint, layer:uint, file:String, loop:Boolean = false, transition:String = ServerConnection.TRANSITION_CUT, duration:int = 0, direction:String = ServerConnection.DIRECTION_FROMLEFT, border:String = "", borderWidth:int = 0):String 
 		{
-			var command:String = 'LOADBG  ' + channel + ' \"' + file + '\" ' + (loop ? "LOOP" : "") + ' ' + transition + ' ' + duration + ' ' + direction + ' \"' + border +'\" ' + borderWidth + SOCKET_COMMAND_END;
+			var command:String = 'LOADBG ' + channel + '-' + layer + ' \"' + file + '\" ' + (loop ? "LOOP" : "") + ' ' + transition + ' ' + duration + ' ' + direction + ' \"' + border +'\" ' + borderWidth + SOCKET_COMMAND_END;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
 			return command; 
 		}
 		
 		/**
-		 * Starts the playout on a channel. If a transition is prepared it will execute and then the new clip will keep playing.
+		 * Loads a clip to the foreground and plays the first frame before pausing. If any clip is playing on the target foreground then this clip will be replaced.
 		 * @param	channel The channel
+		 * @param	layer The layer you want to load the Media to
+		 * @param	file The file to load
+		 * @param	loop Loop the clip (default: false)
 		 */
-		public function PlayMedia(channel:uint):String 
+		public function LoadMedia(channel:uint, layer:int, file:String, loop:Boolean = false):String 
 		{
-			var command:String = 'PLAY ' + channel + SOCKET_COMMAND_END;
+			var command:String = 'LOAD ' + channel + '-' + layer + ' \"' + file + '\" ' + (loop ? "LOOP" : "") + SOCKET_COMMAND_END;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
 			return command;
 		}
 		
 		/**
-		 * Stops the playout on a channel. Nothing is done to prevent flickering if the channel is operating in a fields-based videomode.
+		 * Moves clip from background to foreground and starts playing it. If a transition, see LoadMediaBG(), is prepared, it will be executed. 
 		 * @param	channel The channel
+		 * @param	layer The layer you want to play the Media on
 		 */
-		public function StopMedia(channel:uint):String 
+		public function PlayMedia(channel:uint, layer:uint):String 
 		{
-			var command:String = 'STOP ' + channel + SOCKET_COMMAND_END;
+			var command:String = 'PLAY ' + channel + '-' + layer + SOCKET_COMMAND_END;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
 			return command;
 		}
 		
 		/**
-		 * Stops the playout if running and removes anything visible (by loading an transparent black frame). Please note that this DOES NOT AFFECT any template graphics that happens to be visible.
+		 * Pauses foreground clip.
 		 * @param	channel The channel
+		 * @param	layer The layer
 		 */
-		public function ClearMedia(channel:uint):String 
+		public function PauseMedia(channel:uint, layer:uint):String 
 		{
-			var command:String = 'CLEAR ' + channel + SOCKET_COMMAND_END;
+			var command:String = 'PAUSE ' + channel + '-' + layer + SOCKET_COMMAND_END;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
 			return command;
 		}
+		
+		/**
+		 * Removes foreground clip.
+		 * @param	channel The channel
+		 * @param	layer The layer
+		 */
+		public function StopMedia(channel:uint, layer:uint):String 
+		{
+			var command:String = 'STOP ' + channel + '-' + layer + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		/**
+		 * Removes all clips (both foreground and background). If no layer is specified then all layers in the specified video_channel are cleared.
+		 * @param	channel The channel you want to clear
+		 * @param	layer The specfic layer you want to clear
+		 */
+		public function ClearMedia(channel:uint, layer:int = -1):String 
+		{
+			var command:String = 'CLEAR ' + channel + (layer != -1 ? "-" + layer : "") + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		////////////////
+		// Data Commands
+		////////////////
 		
 		/**
 		 * Stores the dataset data under the name name.
-		 * @param	name The name to store the data as
-		 * @param	data XML data as defined in http://casparcg.com/wiki/CasparCG_1.8.0_AMCP_Protocol#Template_data
+		 * @param	name The name on the file where you want to store the data
+		 * @param	data XML data, see http://casparcg.com/wiki/CasparCG_2.0_AMCP_Protocol#Template_Data
 		 */
 		public function StoreDataset(name:String, data:XML):String 
 		{
@@ -244,24 +265,25 @@ package caspar.network {
 			return command;
 		}
 		
-		////////////////////////////////
-		//Commands for template graphics
-		////////////////////////////////
+		/////////////////////////////
+		// Template Graphics Commands
+		/////////////////////////////
 		
 		/**
 		 * Prepares a template for displaying. It won’t show until you call CG PLAY (unless you supply the play-on-load flag, which is simply a ‘1’. ‘0’ for “don’t play on load”). data is either inline xml or a reference to a saved dataset.
 		 * @param	channel The channel
-		 * @param	layer The layer to add the template at
+		 * @param	layer The layer where the flashLayer is located
+		 * @param	flashLayer The flashLayer to add the template at
 		 * @param	template the name of the template
-		 * @param	playOnLoad Play the template automatically after loaded (default: false)
-		 * @param	data The data to pass to the template, see http://casparcg.com/wiki/CasparCG_1.8.0_AMCP_Protocol#Format
+		 * @param	playOnLoad Play the template automatically after loaded
+		 * @param	data The XML data to pass to the template, see http://casparcg.com/wiki/CasparCG_2.0_AMCP_Protocol#Template_Data
 		 */
-		public function LoadTemplate(channel:uint, layer:int, template:String, playOnLoad:Boolean = false, data:* = ""):String 
+		public function LoadTemplate(channel:uint, layer:uint, flashLayer:int, template:String, playOnLoad:Boolean = false, data:* = ""):String 
 		{
 			var templateData:String = data;
 			templateData = templateData.replace(/\n|\r|\t/g, "");
-			//templateData = StringUtil.remove(templateData, " ");
-			var command:String = 'CG ' + channel.toString() + ' ADD ' + layer.toString() + ' \"' + template + '\" ' + (playOnLoad ? "1" : "0") + ' \"' + templateData.replace(/\"/g, "\\\"") + '\"' + SOCKET_COMMAND_END;
+			
+			var command:String = 'CG ' + channel + '-' + layer + ' ADD ' + flashLayer + ' \"' + template + '\" ' + (playOnLoad ? "1" : "0") + ' \"' + templateData.replace(/\"/g, "\\\"") + '\"' + SOCKET_COMMAND_END;
 			trace("COMMAND:", command);
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
 			return command;
@@ -270,11 +292,12 @@ package caspar.network {
 		/**
 		 * Removes the visible template from a specific layer.
 		 * @param	channel The channel
-		 * @param	layer The layer to remove a template from
+		 * @param	layer The layer where the flashLayer is located
+		 * @param	flashLayer The flashLayer to remove the template from
 		 */
-		public function RemoveTemplate(channel:uint, layer:int):String 
+		public function RemoveTemplate(channel:uint, layer:uint, flashLayer:int):String 
 		{
-			var command:String = 'CG ' + channel + ' REMOVE ' + layer + SOCKET_COMMAND_END;
+			var command:String = 'CG ' + channel + '-' + layer + ' REMOVE ' + flashLayer + SOCKET_COMMAND_END;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
 			return command;
 		}
@@ -282,22 +305,24 @@ package caspar.network {
 		/**
 		 * Clears all layers and any state that might be stored. What this actually does behind the scene is to create a new instance of the Adobe Flash player ActiveX controller in memory.
 		 * @param	channel The channel
+		 * @param	layer The layer to clear the templates from
 		 */
-		public function ClearTemplates(channel:uint):String 
+		public function ClearTemplates(channel:uint, layer:uint):String 
 		{
-			var command:String = 'CG ' + channel + ' CLEAR' + SOCKET_COMMAND_END;
+			var command:String = 'CG ' + channel + '-' + layer + ' CLEAR' + SOCKET_COMMAND_END;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
 			return command;
 		}
 		
 		/**
-		 * Plays / displays the template in the specified layer
+		 * Plays and displays the template in the specified layer.
 		 * @param	channel The channel
-		 * @param	layer The layer to play
+		 * @param	layer The layer where the flashLayer is located
+		 * @param	flashLayer The flashLayer to play the template at
 		 */
-		public function PlayTemplate(channel:uint, layer:int):String 
+		public function PlayTemplate(channel:uint, layer:uint, flashLayer:int):String 
 		{
-			var command:String = 'CG ' + channel + ' PLAY ' + layer + SOCKET_COMMAND_END;
+			var command:String = 'CG ' + channel + '-' + layer + ' PLAY ' + flashLayer + SOCKET_COMMAND_END;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
 			return command;
 		}
@@ -305,23 +330,25 @@ package caspar.network {
 		/**
 		 * Stops and removes the template from the specified layer. This is different than REMOVE in that the template gets a chance to animate out when it is stopped.
 		 * @param	channel The channel
-		 * @param	layer The layer to stop
+		 * @param	layer The layer where the flashLayer is located
+		 * @param	flashLayer The flashLayer to stop the template at
 		 */
-		public function StopTemplate(channel:uint, layer:int):String 
+		public function StopTemplate(channel:uint, layer:uint, flashLayer:int):String 
 		{
-			var command:String = 'CG ' + channel + ' STOP ' + layer + SOCKET_COMMAND_END;
+			var command:String = 'CG ' + channel + '-' + layer + ' STOP ' + flashLayer + SOCKET_COMMAND_END;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
 			return command;
 		}
 		
 		/**
-		 * Triggers a ”continue” in the template on the specified layer. This is used to control animations that has multiple discreet steps.
+		 * Triggers a "continue" in the template on the specified layer. This is used to control animations that has multiple discreet steps.
 		 * @param	channel The channel
-		 * @param	layer The layer to perform the next command on
+		 * @param	layer The layer where the flashLayer is located
+		 * @param	flashLayer The flashLayer to perform the next command on
 		 */
-		public function Next(channel:uint, layer:int):String 
+		public function Next(channel:uint, layer:uint, flashLayer:int):String 
 		{
-			var command:String = 'CG ' + channel + ' NEXT ' + layer + SOCKET_COMMAND_END;
+			var command:String = 'CG ' + channel + '-' + layer + ' NEXT ' + flashLayer + SOCKET_COMMAND_END;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
 			return command;
 		}
@@ -329,27 +356,29 @@ package caspar.network {
 		/**
 		 * Jumps to the specified label in the template on the specified layer.
 		 * @param	channel The channel
-		 * @param	layer The layer to perform the goto command on
-		 * @param	label The label to jump to
+		 * @param	layer The layer where the flashLayer is located
+		 * @param	flashLayer The flashLayer to perform the invoke command on
+		 * @param	label The label to go to
 		 */
-		public function GotoLabel(channel:uint, layer:int, label:String):String 
+		public function GoTo(channel:uint, layer:uint, flashLayer:int, label:String):String 
 		{
-			var command:String = 'CG ' + channel + ' GOTO ' + layer + ' \"' + label + '\"' + SOCKET_COMMAND_END;
+			var command:String = 'CG ' + channel + '-' + layer + ' GOTO ' + flashLayer + ' \"' + label + '\"' + SOCKET_COMMAND_END;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
 			return command;
 		}
 		
 		/**
-		 * Sends new data to the template on specified layer. data is either inline xml or a reference to a saved dataset. (SetData)
+		 * Sends new data to the template, via SetData(), on specified layer. Data is either inline xml or a reference to a saved dataset. 
 		 * @param	channel The channel
-		 * @param	layer The layer to update
+		 * @param	layer The layer where the flashLayer is located
+		 * @param	flashLayer The flashLayer to update
 		 * @param	data XML data or a reference to a saved dataset
 		 */
-		public function SetData(channel:uint, layer:int, data:*):String 
+		public function SetData(channel:uint, layer:uint, flashLayer:int, data:*):String 
 		{
 			var templateData:String = data;
 			templateData = templateData.replace(/\n|\r|\t/g, "");
-			var command:String = 'CG ' + channel + ' UPDATE ' + layer + ' \"' + templateData.replace(/\"/g, "\\\"") + '\"' + SOCKET_COMMAND_END;
+			var command:String = 'CG ' + channel + '-' + layer + ' UPDATE ' + flashLayer + ' \"' + templateData.replace(/\"/g, "\\\"") + '\"' + SOCKET_COMMAND_END;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
 			return command;
 		}
@@ -357,19 +386,207 @@ package caspar.network {
 		/**
 		 * Calls a custom method in the document class of the template on the specified layer. The method must return void and take no parameters.
 		 * @param	channel The channel
-		 * @param	layer The layer to perform the invoke command on
+		 * @param	layer The layer where the flashLayer is located
+		 * @param	flashLayer The flashLayer to perform the invoke command on
 		 * @param	method The method to call
 		 */
-		public function Invoke(channel:uint, layer:int, method:String):String 
+		public function Invoke(channel:uint, layer:uint, flashLayer:int, method:String):String 
 		{
-			var command:String = 'CG ' + channel + ' INVOKE ' + layer + ' \"' + method + '\"' + SOCKET_COMMAND_END;
+			var command:String = 'CG ' + channel + '-' + layer + ' INVOKE ' + flashLayer + ' \"' + method + '\"' + SOCKET_COMMAND_END;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
 			return command;
 		}
 		
-		////////////////////////////////////
-		//Commands for statistics and status
-		////////////////////////////////////
+		/////////////////
+		// Mixer Commands
+		/////////////////
+		
+		/**
+		 * If keyer equals 1 then the specified layer will not be rendered, instead it will be used as the key for the layer above.
+		 * @param	channel The channel
+		 * @param	layer The layer you want to affect
+		 * @param	keyer Enable or disable the specified layer as a key for the layer above
+		 */
+		public function MixerKeyer(channel:uint, layer:uint, keyer:int):String 
+		{
+			var command:String = 'MIXER ' + channel + '-' + layer + ' KEYER ' + keyer + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		/**
+		 * Use the selected layer as a blender for the underlying layer(s).
+		 * @param	channel The channel
+		 * @param	layer The layer you want to affect
+		 * @param	blend How you want to blend the layer, see http://casparcg.com/wiki/CasparCG_Server_2.0b#Blend_Modes
+		 */
+		public function MixerBlend(channel:uint, layer:uint, blend:String):String 
+		{
+			var command:String = 'MIXER ' + channel + '-' + layer + ' BLEND ' + blend + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		/**
+		 * Changes the opacity of the specified layer.
+		 * @param	channel The channel
+		 * @param	layer The layer you want to affect
+		 * @param	opacity The amount of opacity you want on the layer, 0.0 - 1.0
+		 * @param	duration The time in frames you want the mixer to take
+		 * @param	tween The transition you want, see http://casparcg.com/wiki/CasparCG_Server_2.0b#Animation_Types
+		 */
+		public function MixerOpacity(channel:uint, layer:uint, opacity:Number, duration:uint = 0, tween:String = "linear"):String 
+		{
+			var command:String = 'MIXER ' + channel + '-' + layer + ' OPACITY ' + opacity + ' ' + duration + ' ' + tween + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		/**
+		 * Changes the brightness of the specified layer.
+		 * @param	channel The channel
+		 * @param	layer The layer you want to affect
+		 * @param	brightness How bright you want the layer to be, normally 0.0 - 1.0
+		 * @param	duration The time in frames you want the mixer to take
+		 * @param	tween The transition you want, see http://casparcg.com/wiki/CasparCG_Server_2.0b#Animation_Types
+		 */
+		public function MixerBrightness(channel:uint, layer:uint, brightness:Number, duration:uint = 0, tween:String = "linear"):String 
+		{
+			var command:String = 'MIXER ' + channel + '-' + layer + ' BRIGHTNESS ' + brightness + ' ' + duration + ' ' + tween + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		/**
+		 * Changes the saturation of the specified layer.
+		 * @param	channel The channel
+		 * @param	layer The layer you want to affect
+		 * @param	saturation How saturated you want the layer to be, normally 0.0 - 1.0
+		 * @param	duration The time in frames you want the mixer to take
+		 * @param	tween The transition you want, see http://casparcg.com/wiki/CasparCG_Server_2.0b#Animation_Types
+		 */
+		public function MixerSaturation(channel:uint, layer:uint, saturation:Number, duration:uint = 0, tween:String = "linear"):String 
+		{
+			var command:String = 'MIXER ' + channel + '-' + layer + ' SATURATION ' + saturation + ' ' + duration + ' ' + tween + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		/**
+		 * Changes the contrast of the specified layer.
+		 * @param	channel The channel
+		 * @param	layer The layer you want to affect
+		 * @param	contrast How high contrast you want the layer to have, normally 0.0 - 1.0
+		 * @param	duration The time in frames you want the mixer to take
+		 * @param	tween The transition you want, see http://casparcg.com/wiki/CasparCG_Server_2.0b#Animation_Types
+		 */
+		public function MixerContrast(channel:uint, layer:uint, contrast:Number, duration:uint = 0, tween:String = "linear"):String 
+		{
+			var command:String = 'MIXER ' + channel + '-' + layer + ' CONTRAST ' + contrast + ' ' + duration + ' ' + tween + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		/**
+		 * ...
+		 * @param	channel The channel
+		 * @param	layer The layer you want to affect
+		 * @param	min_input 
+		 * @param	max_input 
+		 * @param	gamma 
+		 * @param	min_output 
+		 * @param	max_output 
+		 * @param	duration The time in frames you want the mixer to take
+		 * @param	tween The transition you want, see http://casparcg.com/wiki/CasparCG_Server_2.0b#Animation_Types
+		 * TODO Fix function- and parameter-descriptions.
+		 */
+		public function MixerLevels(channel:uint, layer:uint, min_input:Number, max_input:Number, gamma:Number, min_output:Number, max_output:Number, duration:uint = 0, tween:String = "linear"):String 
+		{
+			var command:String = 'MIXER ' + channel + '-' + layer + ' LEVELS ' + min_input + ' ' + max_input + ' ' + gamma + ' ' + min_output + ' ' + max_output + ' ' + duration + ' ' + tween + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		/**
+		 * Scales the video stream on the specified layer.
+		 * @param	channel The channel
+		 * @param	layer The layer you want to affect
+		 * @param	x The left edge of the new fillSize, 0 = left edge of monitor, 0.5 = middle of monitor, 1.0 = right edge of monitor. Higher and lower values allowed.
+		 * @param	y The top edge of the new fillSize, 0 = top edge of monitor, 0.5 = middle of monitor, 1.0 = bottom edge of monitor. Higher and lower values allowed.
+		 * @param	scaleX The size of the new fillSize, 1 = 1x the screen size, 0.5 = half the screen size. Higher and lower values allowed.
+		 * @param	scaleY The size of the new fillSize, 1 = 1x the screen size, 0.5 = half the screen size. Higher and lower values allowed.
+		 * @param	duration The time in frames you want the mixer to take
+		 * @param	tween The transition you want, see http://casparcg.com/wiki/CasparCG_Server_2.0b#Animation_Types
+		 */
+		public function MixerFill(channel:uint, layer:uint, x:Number, y:Number, scaleX:Number, scaleY:Number, duration:uint = 0, tween:String = "linear"):String 
+		{
+			var command:String = 'MIXER ' + channel + '-' + layer + ' FILL ' + x + ' ' + y + ' ' + scaleX + ' ' + scaleY + ' ' + duration + ' ' + tween + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		/**
+		 * Masks or crops the video stream on the specified layer.
+		 * @param	channel The channel
+		 * @param	layer The layer you want to affect
+		 * @param	x The left edge of the new clipSize, 0 = left edge of monitor, 0.5 = middle of monitor, 1.0 = right edge of monitor. Higher and lower values allowed.
+		 * @param	y The top edge of the new clipSize,0 = top edge of monitor, 0.5 = middle of monitor, 1.0 = bottom edge of monitor. Higher and lower values allowed.
+		 * @param	scaleX The size of the new clipSize, 1 = 1x the screen size, 0.5 = half the screen size. Higher and lower values allowed.
+		 * @param	scaleY The size of the new clipSize, 1 = 1x the screen size, 0.5 = half the screen size. Higher and lower values allowed.
+		 * @param	duration The time in frames you want the mixer to take
+		 * @param	tween The transition you want, see http://casparcg.com/wiki/CasparCG_Server_2.0b#Animation_Types
+		 */
+		public function MixerClip(channel:uint, layer:uint, x:Number, y:Number, scaleX:Number, scaleY:Number, duration:uint = 0, tween:String = "linear"):String 
+		{
+			var command:String = 'MIXER ' + channel + '-' + layer + ' CLIP ' + x + ' ' + y + ' ' + scaleX + ' ' + scaleY + ' ' + duration + ' ' + tween + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		/**
+		 * Creates a grid of video streams in ascending order of the layer index, i.e. if resolution equals 2 then a 2x2 grid of layers will be created. Layer 0 will never be included in the grid.
+		 * @param	channel The channel
+		 * @param	resolution How large you want the grid to be, 2 = 2x2, 3 = 3x3
+		 * @param	duration The time in frames you want the mixer to take.
+		 * @param	tween The transition you want, see http://casparcg.com/wiki/CasparCG_Server_2.0b#Animation_Types
+		 */
+		public function MixerGrid(channel:uint, resolution:uint, duration:uint = 0, tween:String = "linear"):String 
+		{
+			var command:String = 'MIXER ' + channel + ' GRID ' + resolution + ' ' + duration + ' ' + tween + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		/**
+		 * Changes the volume of the specified layer.
+		 * @param	channel The channel
+		 * @param	layer The layer you want to affect
+		 * @param	volume The volume you want on the layer, 0 = silence, 1 = regular volume. Higher values allowed.
+		 * @param	duration The time in frames you want the mixer to take
+		 * @param	tween The transition you want, see http://casparcg.com/wiki/CasparCG_Server_2.0b#Animation_Types
+		 */
+		public function MixerVolume(channel:uint, layer:uint, volume:Number, duration:uint = 0, tween:String = "linear"):String 
+		{
+			var command:String = 'MIXER ' + channel + '-' + layer + ' VOLUME ' + volume + ' ' + duration + ' ' + tween + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		/**
+		 * Reset all transformations.
+		 * @param	channel The channel you want to reset
+		 * @param	layer The specfic layer you want to reset
+		 */
+		public function MixerClear(channel:uint, layer:int = -1):String 
+		{
+			var command:String = 'MIXER ' + channel + (layer != -1 ? "-" + layer : "") + ' CLEAR' + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		/////////////////
+		// Query Commands
+		/////////////////
 		
 		/**
 		 * Returns information about a mediafile
@@ -377,7 +594,7 @@ package caspar.network {
 		 */
 		public function GetMediaFileInfo(filename:String):String 
 		{
-			var command:String = 'CINF \"'+ filename +'\"'+SOCKET_COMMAND_END;
+			var command:String = 'CINF \"' + filename +'\"' + SOCKET_COMMAND_END;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_MEDIAFILE_INFO } );
 			return command;
 		}
@@ -401,7 +618,7 @@ package caspar.network {
 			var command:String;
 			if (folder == "")
 			{
-				command = 'TLS'+SOCKET_COMMAND_END;
+				command = 'TLS' + SOCKET_COMMAND_END;
 			}
 			else
 			{
@@ -423,27 +640,43 @@ package caspar.network {
 		}
 		
 		/**
-		 * Returns information about the channels on the server. Use this without parameters to check how many channels a server has.
+		 * Returns information about the channels and/or videolayers on the server. Use this without parameters to check how many channels a server has.
 		 * @param	channel The channel (default: -1)
+		 * @param	layer The layer (default: -1)
 		 */
-		public function GetInfo(channel:int = -1):String 
+		public function GetChannelInfo(channel:int = -1, layer:int = -1):String 
 		{
-			var command:String;
-			if (channel == -1)
-			{
-				command = 'INFO'+SOCKET_COMMAND_END;
-			}
-			else
-			{
-				command = 'INFO ' + channel + SOCKET_COMMAND_END;
-			}
+			var command:String = 'INFO' + (channel != -1 ? " " + channel : "") + ((channel != -1 && layer != -1) ? "-" + layer : "") + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_INFO } );
+			return command;
+		}
+		
+		/**
+		 * Returns information about the server.
+		 * @param	type The specific info you want (CONFIG|PATHS|SYSTEM|SERVER|TEMPLATE)
+		 * @param	template The name of the template, only used if type = TEMPLATE)
+		 */
+		public function GetServerInfo(type:String, template:String = null):String 
+		{
+			var command:String = 'INFO ' + type + ((type.toUpperCase() == "TEMPLATE" && template != null) ? " " + template : "") + SOCKET_COMMAND_END;
 			
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_INFO } );
 			return command;
 		}
-		///////////////
-		//Misc commands
-		///////////////
+		
+		/**
+		 * Returns status for the specified layer.
+		 */
+		public function GetStatus(channel:int, layer:int):String 
+		{
+			var command:String = 'STATUS ' + channel + '-' + layer + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_VERSION } );
+			return command;
+		}
+		
+		////////////////
+		// Misc Commands
+		////////////////
 		
 		/**
 		 * Disconnects from the server.
@@ -471,7 +704,6 @@ package caspar.network {
 			_socket.addEventListener(ServerConnectionEvent.ON_IO_ERROR, ioErrorHandler);
 			_socket.addEventListener(ServerConnectionEvent.ON_SECURITY_ERROR, securityErrorHandler);
 			_socket.addEventListener(ServerConnectionEvent.ON_LOG, dispatchAMCPEvent);
-			
 			
 			_timer.addEventListener(TimerEvent.TIMER, onTimerReconnect);
 		}
@@ -506,7 +738,6 @@ package caspar.network {
 		 */
 		private function onSocketClosed(e:ServerConnectionEvent):void
 		{
-			
 			var host:String = _socket.host;
 			var port:uint = _socket.port;
 			
@@ -525,7 +756,6 @@ package caspar.network {
 		 */
 		private function ioErrorHandler(e:ServerConnectionEvent):void
 		{
-			
 			switch (e.command)
 			{
 				case "SocketCommandFailedNoConnection":
@@ -537,15 +767,11 @@ package caspar.network {
 						trace("ServerConnection::not connected, try reconnect? " , !_userForcedDisconnection);
 						if (_autoReconnect && !_userForcedDisconnection)
 						{
-							
 							reconnect();
 						}
 					}
 					break;
 			}
-			
-			
-			
 			
 			dispatchEvent(e);
 		}
@@ -605,10 +831,7 @@ package caspar.network {
 		{
 			_socket.connect(host, port);
 			_userForcedDisconnection = false;
-			
 		}
-		
-		
     }
 }
 
@@ -621,18 +844,16 @@ import caspar.network.ServerConnectionEvent;
 
 class CustomSocket extends Socket
 {
-	
     private var _response:String;
 	private var _commandQueue:Array;
 	private var _host:String;
 	private var _port:uint;
 	private var totalSize:int = 0;
-
-    public function CustomSocket() {
-		
+	
+    public function CustomSocket()
+	{
         super();
         configureListeners();
-		
     }
 	
 	override public function connect(host:String, port:int):void 
@@ -646,10 +867,8 @@ class CustomSocket extends Socket
 	
 	override public function close():void 
 	{
-		
 		super.close();
 		dispatchEvent(new ServerConnectionEvent(ServerConnectionEvent.ON_DISCONNECT, false, false, "SocketDisconnect", "Disconnected from " + _host + " at port " + _port));
-		
 	}
 	
 	public function addCommand(command:Object):void
@@ -666,7 +885,6 @@ class CustomSocket extends Socket
 		{
 			trace("ServerConnection::No socket connection, use ServerConnection.connect to connect to a socket.");
 			dispatchEvent(new ServerConnectionEvent(ServerConnectionEvent.ON_IO_ERROR, false, false, "SocketCommandFailedNoConnection", "Tries to execute command before connected to any host"));
-			
 		}
 	}
 	
@@ -676,7 +894,6 @@ class CustomSocket extends Socket
 		{
 			sendRequest(_commandQueue[0].command);
 		}
-		
 	}
 	
 	private function commandFinished():void
@@ -685,7 +902,8 @@ class CustomSocket extends Socket
 		nextCommand();
 	}
 	
-	private function configureListeners():void {
+	private function configureListeners():void
+	{
         addEventListener(Event.CLOSE, closeHandler);
         addEventListener(Event.CONNECT, connectHandler);
         addEventListener(IOErrorEvent.IO_ERROR, ioErrorHandler);
@@ -693,15 +911,17 @@ class CustomSocket extends Socket
         addEventListener(ProgressEvent.SOCKET_DATA, socketDataHandler);
     }
 	
-	private function unregisterListeners():void {
+	private function unregisterListeners():void
+	{
         removeEventListener(Event.CLOSE, closeHandler);
         removeEventListener(Event.CONNECT, connectHandler);
         removeEventListener(IOErrorEvent.IO_ERROR, ioErrorHandler);
         removeEventListener(SecurityErrorEvent.SECURITY_ERROR, securityErrorHandler);
         removeEventListener(ProgressEvent.SOCKET_DATA, socketDataHandler);
     }
-
-    private function writeln(str:String):void {
+	
+    private function writeln(str:String):void
+	{
         //str += "\n";
 		try {
             writeUTFBytes(str);
@@ -710,16 +930,18 @@ class CustomSocket extends Socket
             trace("ServerConnection::"+e);
         }
     }
-
-    private function sendRequest(request:String):void {
+	
+    private function sendRequest(request:String):void
+	{
         _response = "";
         writeln(request);
         flush();
 		writeln("\r\n");
 		flush();
     }
-
-    private function readResponse():void {
+	
+    private function readResponse():void
+	{
 		//totalSize += this.bytesAvailable;
 		//trace(this.readInt(), this.bytesAvailable, totalSize);
         var str:String = this.readUTFBytes(bytesAvailable);
@@ -794,7 +1016,7 @@ class CustomSocket extends Socket
 						mediaPath = mediaPath.replace(/\\/g, "/");
 						
 						media.path = mediaPath;
-
+						
 						if (mediaPath.search("/") == -1)
 						{
 							media.folder = "";
@@ -848,7 +1070,7 @@ class CustomSocket extends Socket
 						templatePath = templatePath.replace(/\\/g, "/");
 						
 						template.path = templatePath;
-
+						
 						if (templatePath.search("/") == -1)
 						{
 							template.folder = "";
@@ -863,7 +1085,6 @@ class CustomSocket extends Socket
 						template.size = size;
 						template.type = CasparItemInfo.TYPE_TEMPLATE;						
 						templateList.push(template);
-						
 					}
 					casparItemList = new CasparItemInfoCollection(templateList);
 					break;
@@ -875,20 +1096,19 @@ class CustomSocket extends Socket
 		{
 			dispatchEvent(new ServerConnectionEvent(ServerConnectionEvent.ON_ERROR, false, false, command, responseMessage));
 		}
-
+		
 		var e:ServerConnectionEvent = new ServerConnectionEvent(type, false, false, command, responseMessage, data, casparItemList);
 		dispatchEvent(e);
-		
 	}
-
-    private function closeHandler(event:Event):void {
-		
+	
+    private function closeHandler(event:Event):void
+	{
 		trace("ServerConnection::EVT: SOCKET CLOSE");
 		close();
-
     }
-
-    private function connectHandler(event:Event):void {
+	
+    private function connectHandler(event:Event):void
+	{
 		trace("ServerConnection::EVT: SOCKET CONNECT");
 		dispatchEvent(new ServerConnectionEvent(ServerConnectionEvent.ON_CONNECT, false, false, "SocketConnect", "Connected to " + _host + " at port " + _port));
 		
@@ -898,22 +1118,24 @@ class CustomSocket extends Socket
 			//trace(ServerConnectionEvent::this.connected);
 			//nextCommand();
 		//}
-		
     }
-
-    private function ioErrorHandler(event:IOErrorEvent):void {
+	
+    private function ioErrorHandler(event:IOErrorEvent):void
+	{
 		trace("ServerConnection::EVT: SOCKET IO ERROR");
 		dispatchEvent(new ServerConnectionEvent(ServerConnectionEvent.ON_IO_ERROR, false, false, "", event.text));
 		commandFinished();
     }
-
-    private function securityErrorHandler(event:SecurityErrorEvent):void {
+	
+    private function securityErrorHandler(event:SecurityErrorEvent):void
+	{
 		trace("ServerConnection::EVT: SOCKET SECURITY ERROR");
 		dispatchEvent(new ServerConnectionEvent(ServerConnectionEvent.ON_SECURITY_ERROR, false, false, "", event.text));
 		commandFinished();
     }
-
-    private function socketDataHandler(event:ProgressEvent):void {
+	
+    private function socketDataHandler(event:ProgressEvent):void
+	{
         trace("ServerConnection::EVT: SOCKET RECIVE DATA");
 		this.readResponse();
     }
