@@ -26,8 +26,8 @@ package caspar.network.data
 		public static const TYPE_MEDIA:String = "type_media";
 		
 		private var _folder:String;
-		private var _templatename:String;
-		private var _templatepath:String;
+		private var _name:String;
+		private var _path:String;
 		private var _size:String;
 		private var _date:String;
 		private var _type:String;
@@ -47,18 +47,18 @@ package caspar.network.data
 			_folder = value;
 		}
 		
-		public function get name():String { return _templatename; }
+		public function get name():String { return _name; }
 		
 		public function set name(value:String):void 
 		{
-			_templatename = value;
+			_name = value;
 		}
 		
-		public function get path():String { return _templatepath; }
+		public function get path():String { return _path; }
 		
 		public function set path(value:String):void 
 		{
-			_templatepath = value;
+			_path = value;
 		}
 		
 		public function get size():String { return _size; }

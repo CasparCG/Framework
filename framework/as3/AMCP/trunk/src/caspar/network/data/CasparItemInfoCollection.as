@@ -20,7 +20,7 @@
 
 package caspar.network.data
 {
-	public class CasparItemInfoCollection
+	public class CasparItemInfoCollection implements IItemList
 	{
 		private var _itemList:Array;
 		

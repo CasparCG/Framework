@@ -21,6 +21,8 @@
 package caspar.network 
 {
 	import caspar.network.data.CasparItemInfoCollection;
+	import caspar.network.data.IItemList;
+	
 	import flash.events.Event;
 	
 	/**
@@ -38,6 +40,11 @@ package caspar.network
 		 * Dispatched when connected
 		 */
 		public static const ON_DISCONNECT:String = "onDisonnect";
+		
+		/**
+		 * Dispatched every time a command is sent to caspar
+		 */
+		public static const ON_SEND_COMMAND:String = "onSendCommand";
 		
 		/**
 		 * Dispatched if caspar returns a 2xx return code
@@ -101,9 +108,9 @@ package caspar.network
 		private var _command:String;
 		private var _message:String = "";
 		private var _data:*;
-		private var _itemList:CasparItemInfoCollection;
+		private var _itemList:IItemList;
 		
-		public function ServerConnectionEvent(type:String, bubbles:Boolean = false, cancelable:Boolean = false, command:String = "", message:String = "", data:* = null, itemList:CasparItemInfoCollection = null ) 
+		public function ServerConnectionEvent(type:String, bubbles:Boolean = false, cancelable:Boolean = false, command:String = "", message:String = "", data:* = null, itemList:IItemList = null ) 
 		{ 
 			super(type, bubbles, cancelable);
 			_command = command;
@@ -140,7 +147,7 @@ package caspar.network
 		/**
 		 * [read-only] Contains a list og
 		 */
-		public function get itemList():CasparItemInfoCollection { return _itemList; }
+		public function get itemList():IItemList { return _itemList; }
 		
 	}
 	
