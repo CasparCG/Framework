@@ -25,6 +25,9 @@
 
 package caspar.network
 {
+	import caspar.network.data.DataInfoItem;
+	import caspar.network.data.DataItem;
+	
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.TimerEvent;
@@ -142,8 +145,84 @@ package caspar.network
 			return command;
 		}
 		
+		/**
+		 * Swaps layers between channels (both foreground and background will be swapped). If layers are not specified then all layers in respective video_channel will be swapped.
+		 * SWAP [channel1:int]{-[layer1:int]} [channel2:int]{-[layer2:int]}
+		 * Examples:
+		 * SWAP 1 2
+		 * SWAP 1-1 2-3
+		 * @param	channel1 Channel 1 
+		 * @param	channel1 Channel 2 
+		 * @param	layer1 Layer 1, if omitted the whole channel will be swapped
+		 * @param	layer1 Layer 2, if omitted the whole channel will be swapped
+		 */
+		public function Swap(channel1:uint, channel2:uint, layer1:int = -1, layer2:int = -1):String 
+		{
+			var command:String = 'SWAP ' + channel1 + (layer1 != -1 ? "-" + layer1 : "") + " " + channel2 + (layer2 != -1 ? "-" + layer2 : "") + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		/**
+		 * Calls method on the specified producer with the provided param string.
+		 * CALL [video_channel:int]{-[layer:int]|-0} [param:string]
+		 * Examples:
+		 * CALL 1 LOOP
+		 * CALL 1-2 SEEK 25
+		 * @param	channel The channel
+		 * @param	layer The layer
+		 * @param	param See example
+		 */
+		public function Call(channel:uint, layer:uint, param:String):String 
+		{
+			var command:String = 'CALL ' + channel + (layer != -1 ? "-" + layer : "") + " " + param + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		
+		/**
+		 * The string "parameters" will be parsed by available registered consumer factories. If a successful match is found a consumer will be created and added to the video_channel.
+		 * Examples:
+		 * ADD 1 DECKLINK 1
+		 * ADD 1 BLUEFISH 2
+		 * ADD 1 SCREEN
+		 * ADD 1 AUDIO
+		 * ADD 1 FILE test.mov
+		 * e.g. In this last example it would be "FILE test.mov" you should pass to the "parameters" string.
+		 * @param	channel The channel
+		 * @param	parameters See example
+		 */
+		public function AddConsumer(channel:uint, parameters:String):String 
+		{
+			var command:String = 'ADD ' + channel + " " + parameters + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		/**
+		 * Removes an existing consumer from video_channel.
+		 * REMOVE [video_channel:int] [parameters:string]
+		 * Examples:
+		 * REMOVE 1 DECKLINK 1
+		 * REMOVE 1 BLUEFISH 2
+		 * REMOVE 1 SCREEN
+		 * REMOVE 1 AUDIO
+		 * REMOVE 1 FILE test.mov
+		 * e.g. In this last example it would be "FILE test.mov" you should pass to the "parameters" string.
+		 * @param	channel The channel
+		 * @param	parameters See example
+		 */
+		public function RemoveConsumer(channel:uint, parameters:String):String 
+		{
+			var command:String = 'REMOVE ' + channel + " " + parameters + SOCKET_COMMAND_END;
+			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
+			return command;
+		}
+		
+		
 		/////////////////
-		// Basic Commands
+		// Media Commands
 		/////////////////
 		
 		/**
@@ -227,30 +306,33 @@ package caspar.network
 			return command;
 		}
 		
+		
+		
+		
 		////////////////
 		// Data Commands
 		////////////////
 		
 		/**
-		 * Stores the dataset data under the name name.
-		 * @param	name The name on the file where you want to store the data
-		 * @param	data XML data, see http://casparcg.com/wiki/CasparCG_2.0_AMCP_Protocol#Template_Data
+		 * Stores a dataset, you can use help function inside DataItem to build template xml. Cannot create new directories
+		 * @param	dataItem The data item, see http://casparcg.com/wiki/CasparCG_2.0_AMCP_Protocol#Template_Data
 		 */
-		public function StoreDataset(name:String, data:XML):String 
+		public function StoreDataset(dataItem:DataItem):String 
 		{
-			var command:String = 'DATA STORE \"' + name +'\" \"' + String(data).replace(/\"/g, "\\\"") + '\"' + SOCKET_COMMAND_END;
+			var command:String = 'DATA STORE ' + (dataItem.dataInfoItem.folder == "" ? dataItem.dataInfoItem.name : dataItem.dataInfoItem.folder + "\\\\" + dataItem.dataInfoItem.name) +' \"' + String(dataItem.content).replace(/\"/g, "\\\"") + '\"' + SOCKET_COMMAND_END;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
 			return command;
 		}
 		
 		/**
-		 * Returns the data saved under the name name. Will dispatch a ServerConnection.ON_DATARETRIEVE event if successfull otherwise a ServerConnection.ON_ERROR.
+		 * Returns a dataset. Will dispatch a ServerConnection.ON_DATARETRIEVE event if successfull otherwise a ServerConnection.ON_ERROR. Data is returned as a caspar.network.data.DataItem object
 		 * @param	name The name of the data to retrieve
 		 */
-		public function GetData(name:String):String 
+		public function GetData(dataInfoItem:DataInfoItem):String 
 		{
 			//BUG ON SUCCESS, CASPAR DOES NOT RETURN ANY RESPONSE CODE
-			var command:String = 'DATA RETRIEVE \"' + name +'\"' + SOCKET_COMMAND_END;
+			var command:String = 'DATA RETRIEVE \"' + (dataInfoItem.folder == "" ? dataInfoItem.name : dataInfoItem.folder + "\\\\" + dataInfoItem.name) +'\" \"' +'\"' + SOCKET_COMMAND_END;
+			_socket.currentDataInfoItem = dataInfoItem;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_GET_DATA } );
 			return command;
 		}
@@ -692,6 +774,7 @@ package caspar.network
 		{
 			_socket.addEventListener(ServerConnectionEvent.ON_CONNECT, dispatchAMCPEvent);
 			_socket.addEventListener(ServerConnectionEvent.ON_DISCONNECT, onSocketClosed);
+			_socket.addEventListener(ServerConnectionEvent.ON_SEND_COMMAND, dispatchAMCPEvent);
 			_socket.addEventListener(ServerConnectionEvent.ON_MEDIAFILE_INFO, dispatchAMCPEvent);
 			_socket.addEventListener(ServerConnectionEvent.ON_GET_MEDIAFILES, dispatchAMCPEvent);
 			_socket.addEventListener(ServerConnectionEvent.ON_GET_DATASETS, dispatchAMCPEvent);
@@ -717,6 +800,7 @@ package caspar.network
 		{
 			_socket.removeEventListener(ServerConnectionEvent.ON_CONNECT, dispatchAMCPEvent);
 			_socket.removeEventListener(ServerConnectionEvent.ON_DISCONNECT, onSocketClosed);
+			_socket.removeEventListener(ServerConnectionEvent.ON_SEND_COMMAND, dispatchAMCPEvent);
 			_socket.removeEventListener(ServerConnectionEvent.ON_MEDIAFILE_INFO, dispatchAMCPEvent);
 			_socket.removeEventListener(ServerConnectionEvent.ON_GET_MEDIAFILES, dispatchAMCPEvent);
 			_socket.removeEventListener(ServerConnectionEvent.ON_GET_DATASETS, dispatchAMCPEvent);
@@ -835,15 +919,18 @@ package caspar.network
     }
 }
 
+import caspar.network.ServerConnectionEvent;
+import caspar.network.data.*;
+
 import flash.errors.*;
 import flash.events.*;
 import flash.net.Socket;
 import flash.utils.Timer;
-import caspar.network.data.*;
-import caspar.network.ServerConnectionEvent;
 
 class CustomSocket extends Socket
 {
+	public var currentDataInfoItem:DataInfoItem;
+	
     private var _response:String;
 	private var _commandQueue:Array;
 	private var _host:String;
@@ -892,10 +979,11 @@ class CustomSocket extends Socket
 	{
 		if (_commandQueue.length > 0)
 		{
+			dispatchEvent(new ServerConnectionEvent(ServerConnectionEvent.ON_SEND_COMMAND, false, false, "", _commandQueue[0].command));
 			sendRequest(_commandQueue[0].command);
 		}
 	}
-	
+
 	private function commandFinished():void
 	{
 		_commandQueue.splice(0, 1);
@@ -975,7 +1063,7 @@ class CustomSocket extends Socket
 		var responseCode:String = (responseArray[0].split(" "))[0];
 		var responseMessage:String = responseArray[0];
 		var data:*;
-		var casparItemList:CasparItemInfoCollection;
+		var itemList:IItemList;
 		
 		//DATARETRIEVE BUG ON SUCCESS, CASPAR DOES NOT RETURN ANY RESPONSE CODE
 		if (responseArray[0].charAt(0) == "<" && responseCode.charAt(0) == "<")
@@ -1034,17 +1122,35 @@ class CustomSocket extends Socket
 						mediaList.push(media);
 						
 					}
-					casparItemList = new CasparItemInfoCollection(mediaList);
+					itemList = new CasparItemInfoCollection(mediaList);
 					break;
 				case ServerConnectionEvent.ON_GET_DATASETS:
-					data = new Array();
+					var items:Array = [];
+					var item:DataListItem;
+					
+					var folder:String = "";
+					var name:String;
+					
 					for (i = 1; i < responseArray.length - 2; i++)
 					{
-						data.push(responseArray[i]);
+						var rawdata:String = String(responseArray[i]).replace("\r", "");
+						name = rawdata;
+						
+						if (rawdata.search(/\\/g) != -1)
+						{
+							//resides inside a folder
+							folder = rawdata.split("\\")[0];
+							name = rawdata.split("\\")[1];
+						}
+						
+						item = new DataInfoItem(folder, name);
+						items.push(item);
 					}
+					
+					itemList = new DataInfoItemCollection(items);
 					break;
 				case ServerConnectionEvent.ON_GET_DATA:
-					data = new XML(responseArray[0]);
+					data = new DataItem(currentDataInfoItem, new XML(responseArray[0]));
 					break;
 				case ServerConnectionEvent.ON_INFO:
 					data = new Array();
@@ -1086,7 +1192,7 @@ class CustomSocket extends Socket
 						template.type = CasparItemInfo.TYPE_TEMPLATE;						
 						templateList.push(template);
 					}
-					casparItemList = new CasparItemInfoCollection(templateList);
+					itemList = new CasparItemInfoCollection(templateList);
 					break;
 				default:
 					dispatchEvent(new ServerConnectionEvent(ServerConnectionEvent.ON_OTHER_COMMAND, false, false, command, responseMessage));
@@ -1097,7 +1203,7 @@ class CustomSocket extends Socket
 			dispatchEvent(new ServerConnectionEvent(ServerConnectionEvent.ON_ERROR, false, false, command, responseMessage));
 		}
 		
-		var e:ServerConnectionEvent = new ServerConnectionEvent(type, false, false, command, responseMessage, data, casparItemList);
+		var e:ServerConnectionEvent = new ServerConnectionEvent(type, false, false, command, responseMessage, data, itemList);
 		dispatchEvent(e);
 	}
 	
