@@ -194,6 +194,72 @@ namespace Svt.Caspar
 			Device.Server.SendString("SET " + ID + " MODE " + ToAMCPString(mode));
 		}
 
+
+
+
+
+
+        public void SetVolume(int videoLayer, float volume, int duration, Easing easing)
+        {
+            if (videoLayer == -1)
+                Device.Server.SendString(string.Format("MIXER {0} VOLUME {1} {2} {3}", ID, volume, duration, Enum.GetName(typeof(Easing), easing)));
+            else
+                Device.Server.SendString(string.Format("MIXER {0}-{1} VOLUME {2} {3} {4}", ID, videoLayer, volume, duration, Enum.GetName(typeof(Easing), easing)));
+        }
+
+        public void SetOpacity(int videoLayer, float opacity, int duration, Easing easing)
+        {
+            if (videoLayer == -1)
+                Device.Server.SendString(string.Format("MIXER {0} OPACITY {1} {2} {3}", ID, opacity, duration, Enum.GetName(typeof(Easing), easing)));
+            else
+                Device.Server.SendString(string.Format("MIXER {0}-{1} OPACITY {2} {3} {4}", ID, videoLayer, opacity, duration, Enum.GetName(typeof(Easing), easing)));
+        }
+
+        public void SetBrightness(int videoLayer, float brightness, int duration, Easing easing)
+        {
+            if (videoLayer == -1)
+                Device.Server.SendString(string.Format("MIXER {0} BRIGHTNESS {1} {2} {3}", ID, brightness, duration, Enum.GetName(typeof(Easing), easing)));
+            else
+                Device.Server.SendString(string.Format("MIXER {0}-{1} BRIGHTNESS {2} {3} {4}", ID, videoLayer, brightness, duration, Enum.GetName(typeof(Easing), easing)));
+        }
+
+        public void SetContrast(int videoLayer, float contrast, int duration, Easing easing)
+        {
+            if (videoLayer == -1)
+                Device.Server.SendString(string.Format("MIXER {0} CONTRAST {1} {2} {3}", ID, contrast, duration, Enum.GetName(typeof(Easing), easing)));
+            else
+                Device.Server.SendString(string.Format("MIXER {0}-{1} CONTRAST {2} {3} {4}", ID, videoLayer, contrast, duration, Enum.GetName(typeof(Easing), easing)));
+        }
+
+        public void SetSaturation(int videoLayer, float contrast, int duration, Easing easing)
+        {
+            if (videoLayer == -1)
+                Device.Server.SendString(string.Format("MIXER {0} SATURATION {1} {2} {3}", ID, contrast, duration, Enum.GetName(typeof(Easing), easing)));
+            else
+                Device.Server.SendString(string.Format("MIXER {0}-{1} SATURATION {2} {3} {4}", ID, videoLayer, contrast, duration, Enum.GetName(typeof(Easing), easing)));
+        }
+
+        public void SetLevels(int videoLayer, float minIn, float maxIn, float gamma, float minOut, float maxOut, int duration, Easing easing)
+        {
+            if (videoLayer == -1)
+                Device.Server.SendString(string.Format("MIXER {0} LEVELS {1} {2} {3} {4} {5} {6} {7}", ID, minIn, maxIn, gamma, minOut, maxOut, duration, Enum.GetName(typeof(Easing), easing)));
+            else
+                Device.Server.SendString(string.Format("MIXER {0}-{1} LEVELS {2} {3} {4} {5} {6} {7} {8}", ID, videoLayer, minIn, maxIn, gamma, minOut, maxOut, duration, Enum.GetName(typeof(Easing), easing)));
+        }
+
+        public void SetGeometry(int videoLayer, float x, float y, float scaleX, float scaleY, int duration, Easing easing)
+        {
+            if (videoLayer == -1)
+                Device.Server.SendString(string.Format("MIXER {0} FILL {1} {2} {3} {4} {5} {6}", ID, x, y, scaleX, scaleY, duration, Enum.GetName(typeof(Easing), easing)));
+            else
+                Device.Server.SendString(string.Format("MIXER {0}-{1} FILL {2} {3} {4} {5} {6} {7}", ID, videoLayer, x, y, scaleX, scaleY, duration, Enum.GetName(typeof(Easing), easing)));
+        }
+
+
+
+
+
+
 		private string ToAMCPString(VideoMode mode)
 		{
 			string result = string.Empty;
