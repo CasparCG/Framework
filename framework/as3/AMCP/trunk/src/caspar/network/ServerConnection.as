@@ -1127,7 +1127,7 @@ class CustomSocket extends Socket
 					break;
 				case ServerConnectionEvent.ON_GET_DATASETS:
 					var items:Array = [];
-					var item:DataInfoItem;
+					var item:DataItemInfo;
 					
 					var folder:String = "";
 					var name:String;
