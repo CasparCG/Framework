@@ -28,6 +28,7 @@ package caspar.network.data
 	 public class DataItemInfo
 	{
 		private var _fullPath:String;
+		private var _label:String;
 		
 		/**
 		 * Creates a new DataInfoItem 
@@ -35,9 +36,23 @@ package caspar.network.data
 		 */
 		public function DataItemInfo(fullPath:String) 
 		{
-			_fullPath = fullPath.replace(/\\\\/g, "/");;
+			_fullPath = fullPath.replace(/\\/g, "/");
+			_label = this.filename;
 		}
 		
+		/**
+		 * A custom label that can be set, defaults to filename
+		 */
+		public function get label():String
+		{
+			return _label;
+		}
+
+		public function set label(value:String):void
+		{
+			_label = value;
+		}
+
 		/**
 		 * Returns the filename of the .ftd data file (without extension .ftd)
 		 */
