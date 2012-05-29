@@ -20,6 +20,11 @@
 
 package caspar.network.data
 {
+	/**
+	 * Contains info on a caspar item, e.g. a template (.ft) or a media file (.mov, .tga....)
+	 * @author Andreas Jeansson, SVT
+	 */
+
 	public class CasparItemInfo implements ICasparItemInfo
 	{
 		public static const TYPE_TEMPLATE:String = "type_template";
@@ -32,7 +37,7 @@ package caspar.network.data
 		private var _date:String;
 		private var _type:String;
 		private var _subtype:String;
-		
+
 		public function CasparItemInfo()
 		{
 			
@@ -40,6 +45,9 @@ package caspar.network.data
 		
 		/* INTERFACE se.svt.caspar.network.data.ICasparItemInfo */
 
+		/**
+		 * The folder where the file resides
+		 */
 		public function get folder():String { return _folder; }
 		
 		public function set folder(value:String):void 
@@ -47,6 +55,9 @@ package caspar.network.data
 			_folder = value;
 		}
 		
+		/**
+		 * The name of the file without extension
+		 */
 		public function get name():String { return _name; }
 		
 		public function set name(value:String):void 
@@ -54,6 +65,9 @@ package caspar.network.data
 			_name = value;
 		}
 		
+		/**
+		 * The path to the file
+		 */
 		public function get path():String { return _path; }
 		
 		public function set path(value:String):void 
@@ -61,6 +75,9 @@ package caspar.network.data
 			_path = value;
 		}
 		
+		/**
+		 * The size of the file in bytes
+		 */
 		public function get size():String { return _size; }
 		
 		public function set size(value:String):void 
@@ -68,6 +85,9 @@ package caspar.network.data
 			_size = value;
 		}
 		
+		/**
+		 * The modification date of the file
+		 */
 		public function get date():String { return _date; }
 		
 		public function set date(value:String):void 
@@ -75,6 +95,9 @@ package caspar.network.data
 			_date = value;
 		}
 		
+		/**
+		 * The type of caspar item, either CasparItemInfo.TYPE_MEDIA or CasparItemInfo.TYPE_TEMPLATE
+		 */
 		public function get type():String 
 		{
 			return _type;
@@ -85,6 +108,9 @@ package caspar.network.data
 			_type = value;
 		}
 		
+		/**
+		 * If the type is CasparItemInfo.TYPE_MEDIA the subtype will be either "STILL" or "MOVIE"
+		 */
 		public function get subtype():String 
 		{
 			return _subtype;
@@ -94,9 +120,6 @@ package caspar.network.data
 		{
 			_subtype = value;
 		}
-		
-	
-		
 		
 	}
 

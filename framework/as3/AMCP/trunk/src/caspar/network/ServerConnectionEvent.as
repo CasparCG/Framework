@@ -26,7 +26,7 @@ package caspar.network
 	import flash.events.Event;
 	
 	/**
-	 * ...
+	 * The events that is dispatched by the ServerConnection
 	 * @author Andreas Jeansson
 	 */
 	public class ServerConnectionEvent extends Event 

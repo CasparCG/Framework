@@ -25,7 +25,7 @@
 
 package caspar.network
 {
-	import caspar.network.data.DataInfoItem;
+	import caspar.network.data.DataItemInfo;
 	import caspar.network.data.DataItem;
 	
 	import flash.events.Event;
@@ -319,7 +319,7 @@ package caspar.network
 		 */
 		public function StoreDataset(dataItem:DataItem):String 
 		{
-			var command:String = 'DATA STORE ' + (dataItem.dataInfoItem.folder == "" ? dataItem.dataInfoItem.name : dataItem.dataInfoItem.folder + "\\\\" + dataItem.dataInfoItem.name) +' \"' + String(dataItem.content).replace(/\"/g, "\\\"") + '\"' + SOCKET_COMMAND_END;
+			var command:String = 'DATA STORE ' + dataItem.dataInfoItem.fullPath +' \"' + dataItem.contentAsString + '\"' + SOCKET_COMMAND_END;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_OTHER_COMMAND } );
 			return command;
 		}
@@ -328,10 +328,10 @@ package caspar.network
 		 * Returns a dataset. Will dispatch a ServerConnection.ON_DATARETRIEVE event if successfull otherwise a ServerConnection.ON_ERROR. Data is returned as a caspar.network.data.DataItem object
 		 * @param	name The name of the data to retrieve
 		 */
-		public function GetData(dataInfoItem:DataInfoItem):String 
+		public function GetData(dataInfoItem:DataItemInfo):String 
 		{
 			//BUG ON SUCCESS, CASPAR DOES NOT RETURN ANY RESPONSE CODE
-			var command:String = 'DATA RETRIEVE \"' + (dataInfoItem.folder == "" ? dataInfoItem.name : dataInfoItem.folder + "\\\\" + dataInfoItem.name) +'\" \"' +'\"' + SOCKET_COMMAND_END;
+			var command:String = 'DATA RETRIEVE \"' + dataInfoItem.fullPathAMCPFormatted +'\" \"' +'\"' + SOCKET_COMMAND_END;
 			_socket.currentDataInfoItem = dataInfoItem;
 			_socket.addCommand( { command: command, type: ServerConnectionEvent.ON_GET_DATA } );
 			return command;
@@ -929,7 +929,7 @@ import flash.utils.Timer;
 
 class CustomSocket extends Socket
 {
-	public var currentDataInfoItem:DataInfoItem;
+	public var currentDataInfoItem:DataItemInfo;
 	
     private var _response:String;
 	private var _commandQueue:Array;
@@ -1064,6 +1064,7 @@ class CustomSocket extends Socket
 		var responseMessage:String = responseArray[0];
 		var data:*;
 		var itemList:IItemList;
+		var success:Boolean = true; 
 		
 		//DATARETRIEVE BUG ON SUCCESS, CASPAR DOES NOT RETURN ANY RESPONSE CODE
 		if (responseArray[0].charAt(0) == "<" && responseCode.charAt(0) == "<")
@@ -1126,7 +1127,7 @@ class CustomSocket extends Socket
 					break;
 				case ServerConnectionEvent.ON_GET_DATASETS:
 					var items:Array = [];
-					var item:DataListItem;
+					var item:DataInfoItem;
 					
 					var folder:String = "";
 					var name:String;
@@ -1136,21 +1137,30 @@ class CustomSocket extends Socket
 						var rawdata:String = String(responseArray[i]).replace("\r", "");
 						name = rawdata;
 						
-						if (rawdata.search(/\\/g) != -1)
+						/*if (rawdata.search(/\\/g) != -1)
 						{
 							//resides inside a folder
 							folder = rawdata.split("\\")[0];
 							name = rawdata.split("\\")[1];
-						}
+						}*/
 						
-						item = new DataInfoItem(folder, name);
+						//rawdata
+						
+						item = new DataItemInfo(rawdata);
 						items.push(item);
 					}
 					
-					itemList = new DataInfoItemCollection(items);
+					itemList = new DataItemInfoCollection(items);
 					break;
 				case ServerConnectionEvent.ON_GET_DATA:
-					data = new DataItem(currentDataInfoItem, new XML(responseArray[0]));
+					try
+					{
+						data = new DataItem(currentDataInfoItem, new XML(responseArray[0]));
+					}
+					catch(e:Error)
+					{
+						trace(responseArray[0] +" cannot be converted to xml");
+					}
 					break;
 				case ServerConnectionEvent.ON_INFO:
 					data = new Array();
@@ -1201,10 +1211,14 @@ class CustomSocket extends Socket
 		else
 		{
 			dispatchEvent(new ServerConnectionEvent(ServerConnectionEvent.ON_ERROR, false, false, command, responseMessage));
+			success = false;
 		}
-		
-		var e:ServerConnectionEvent = new ServerConnectionEvent(type, false, false, command, responseMessage, data, itemList);
-		dispatchEvent(e);
+	
+		if(success)
+		{
+			var e:ServerConnectionEvent = new ServerConnectionEvent(type, false, false, command, responseMessage, data, itemList);
+			dispatchEvent(e);
+		}
 	}
 	
     private function closeHandler(event:Event):void
