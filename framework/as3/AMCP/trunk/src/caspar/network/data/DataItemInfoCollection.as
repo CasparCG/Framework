@@ -12,32 +12,31 @@
 *    but WITHOUT ANY WARRANTY; without even the implied warranty of
 *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *    GNU General Public License for more details.
-
+*
 *    You should have received a copy of the GNU General Public License
 *    along with CasparCG.  If not, see <http://www.gnu.org/licenses/>.
 *
 */
 
-package caspar.network.data
+package caspar.network.data 
 {
 	/**
-	 * A collection of CasparItemInfo items
+	 * A collection of DataInfoItems
 	 * @author Andreas Jeansson, SVT
 	 */
-	
-	public class CasparItemInfoCollection implements IItemList
+	public class DataItemInfoCollection implements IItemList
 	{
 		private var _itemList:Array;
 		
-		public function CasparItemInfoCollection(itemList:Array)
+		public function DataItemInfoCollection(itemList:Array)
 		{
 			_itemList = itemList;
-			_itemList.sortOn(["folder", "name"], [ Array.CASEINSENSITIVE, Array.CASEINSENSITIVE] );
+			_itemList.sortOn(["folder", "filename"], [ Array.CASEINSENSITIVE, Array.CASEINSENSITIVE] );
 		}
 		
 		/**
-		 * Returns an array of the ICasparItemInfo items
-		 * @return an array of the ICasparItemInfo items
+		 * Returns an array of the DataInfoItems-items
+		 * @return an array of the DataInfoItems-items
 		 */
 		public function getItems():Array
 		{
@@ -47,12 +46,12 @@ package caspar.network.data
 		/**
 		 * Returns all the items in a specific folder
 		 * @param	folder the folder to use
-		 * @return an array of ICasparItemInfo-items
+		 * @return an array of DataInfoItem-items
 		 */
 		public function getItemsInFolder(folder:String):Array
 		{
 			var items:Array;
-			for each(var item:ICasparItemInfo in _itemList)
+			for each(var item:DataItemInfo in _itemList)
 			{
 				if (item.folder == folder)
 				{
@@ -63,19 +62,19 @@ package caspar.network.data
 					items.push(item);
 				}
 			}
-			items.sortOn("name", Array.CASEINSENSITIVE);
+			items.sortOn("filename", Array.CASEINSENSITIVE);
 			return items;
 		}
 		
 		/**
-		 * Returns a list of folders that contains the caspar items
-		 * @return an array of ICasparItemInfo-items
+		 * Returns a list of folders that contains .ftd data files
+		 * @return an array of DataInfoItem-items
 		 */
 		public function getFolders():Array
 		{
 			var folders:Array;
 			var currentFolder:String;
-			for each(var item:ICasparItemInfo in _itemList)
+			for each(var item:DataItemInfo in _itemList)
 			{
 				if (folders == null)
 				{
@@ -90,5 +89,8 @@ package caspar.network.data
 			}
 			return folders;
 		}
+		
+		
 	}
+
 }

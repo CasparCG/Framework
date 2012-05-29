@@ -20,6 +20,11 @@
 
 package caspar.network.data 
 {
+	/**
+	 * Interface used by CasparItemInfo
+	 * @author Andreas Jeansson, SVT
+	 */
+	
 	public interface ICasparItemInfo
 	{
 		function get folder():String;
