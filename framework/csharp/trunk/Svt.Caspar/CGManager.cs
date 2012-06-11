@@ -215,7 +215,7 @@ namespace Svt.Caspar
             if (videoLayer == -1)
                 Update(layer, data);
             else
-                Channel.Device.Server.SendString("CG " + Channel.ID + " UPDATE " + layer + " " + " \"" + data.ToAMCPEscapedXml() + "\"");
+                Channel.Device.Server.SendString("CG " + Channel.ID + "-" + videoLayer + " UPDATE " + layer + " " + " \"" + data.ToAMCPEscapedXml() + "\"");
         }
 
 
