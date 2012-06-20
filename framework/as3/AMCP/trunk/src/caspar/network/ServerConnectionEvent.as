@@ -37,7 +37,7 @@ package caspar.network
 		public static const ON_CONNECT:String = "onConnect";
 		
 		/**
-		 * Dispatched when connected
+		 * Dispatched when disconnected
 		 */
 		public static const ON_DISCONNECT:String = "onDisonnect";
 		
