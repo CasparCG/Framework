@@ -66,6 +66,20 @@ namespace Svt.Caspar
             set { videoLayer_ = value; }
         }
 
+        private int seek_ = -1;
+        public int Seek
+        {
+            get { return seek_; }
+            set { seek_ = value; }
+        }
+
+        private int length_ = -1;
+        public int Length
+        {
+            get { return length_; }
+            set { length_ = value; }
+        }
+
 		private Transition transition_ = new Transition();
 		public Transition Transition
 		{
@@ -90,6 +104,14 @@ namespace Svt.Caspar
             string videoLayer = reader["videoLayer"];
             if (!string.IsNullOrEmpty(videoLayer))
                 VideoLayer = Int32.Parse(videoLayer);
+
+            string seek = reader["seek"];
+            if (!string.IsNullOrEmpty(seek))
+                Seek = Int32.Parse(seek);
+
+            string length = reader["length"];
+            if (!string.IsNullOrEmpty(length))
+                Length = Int32.Parse(length);
 
 			string loop = reader["loop"];
 			bool bLoop = false;
@@ -117,6 +139,8 @@ namespace Svt.Caspar
 			writer.WriteStartElement("item", Properties.Resources.CasparPlayoutSchemaURL);
 			writer.WriteAttributeString("clipname", Clipname);
             writer.WriteAttributeString("videoLayer", VideoLayer.ToString());
+            writer.WriteAttributeString("seek", Seek.ToString());
+            writer.WriteAttributeString("length", Length.ToString());
 			writer.WriteAttributeString("loop", Loop.ToString());          
 
 			writer.WriteStartElement("transition");
