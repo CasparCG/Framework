@@ -55,7 +55,7 @@ namespace Svt.Caspar
 
 		public override string ToString()
 		{
-            return Type.ToString() + " " + duration_.ToString() + direction_.ToString();
+            return Type.ToString() + " " + duration_.ToString() + " " + direction_.ToString();
 		}
 	}
 }
