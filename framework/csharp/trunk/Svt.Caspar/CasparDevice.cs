@@ -6,144 +6,171 @@ namespace Svt.Caspar
 {
 	public class CasparDevice
 	{
-		private Svt.Network.ServerConnection server_ = new Svt.Network.ServerConnection();
-		private TemplatesCollection templates_ = new TemplatesCollection();
-		private List<MediaInfo> mediafiles_ = new List<MediaInfo>();
-		private List<string> datafiles_ = new List<string>();
-		private List<Channel> channels_ = new List<Channel>();
-		private CasparDeviceSettings settings_ = new CasparDeviceSettings();
-		private string version_ = "unknown";
+        public const int DefaultReconnectInterval = 5;
 
+        internal Svt.Network.ServerConnection Connection { get; private set; }
+        private Svt.Network.ReconnectionHelper ReconnectionHelper { get; set; }
+        public int ReconnectInterval { get; set; }
+
+        public CasparDeviceSettings Settings { get; private set; }
+        public List<Channel> Channels { get; private set; }
+        public TemplatesCollection Templates { get; private set; }
+        public List<MediaInfo> Mediafiles { get; private set; }
+        public List<string> Datafiles { get; private set; }
+
+        public string Version { get; private set; }
+
+        public bool IsConnected { get { return (Connection == null) ? false : Connection.IsConnected; } }
+
+        [Obsolete("This event is obsolete. Use the new ConnectionStatusChanged instead")]
 		public event EventHandler<Svt.Network.NetworkEventArgs> Connected;
-		public event EventHandler<Svt.Network.NetworkEventArgs> Disconnected;
-		public event EventHandler<Svt.Network.NetworkEventArgs> FailedConnect;
-		public event EventHandler<Svt.Network.ExceptionEventArgs> OnAsyncException;
+        [Obsolete("This event is obsolete. Use the new ConnectionStatusChanged instead")]
+        public event EventHandler<Svt.Network.NetworkEventArgs> Disconnected;
+        [Obsolete("This event is obsolete. Use the new ConnectionStatusChanged instead")]
+        public event EventHandler<Svt.Network.NetworkEventArgs> FailedConnect;
+        [Obsolete("This event is obsolete.")]
+        public event EventHandler<Svt.Network.ExceptionEventArgs> OnAsyncException;
+
+        public event EventHandler<Svt.Network.ConnectionEventArgs> ConnectionStatusChanged;
+
 		public event EventHandler<DataEventArgs> DataRetrieved;
 		public event EventHandler<EventArgs> UpdatedChannels;
 		public event EventHandler<EventArgs> UpdatedTemplates;
 		public event EventHandler<EventArgs> UpdatedMediafiles;
 		public event EventHandler<EventArgs> UpdatedDatafiles;
 
+        bool bIsDisconnecting = false;
+
 		public CasparDevice()
 		{
-			DoInitialize();
-		}
+            Connection = new Network.ServerConnection();
+            ReconnectInterval = DefaultReconnectInterval;
 
-		void DoInitialize()
-		{
-			server_.ProtocolStrategy = new AMCP.AMCPProtocolStrategy(this);
-			server_.Connected += new EventHandler<Svt.Network.NetworkEventArgs>(server__Connected);
-			server_.Disconnected += new EventHandler<Svt.Network.NetworkEventArgs>(server__Disconnected);
-			server_.FailedConnect += new EventHandler<Svt.Network.NetworkEventArgs>(server__FailedConnect);
-			server_.CaughtAsyncException += new EventHandler<Svt.Network.ExceptionEventArgs>(server__CaughtAsyncException);
+            Settings = new CasparDeviceSettings();
+            Channels = new List<Channel>();
+		    Templates = new TemplatesCollection();
+		    Mediafiles = new List<MediaInfo>();
+		    Datafiles = new List<string>();
+
+            Version = "unknown";
+
+            Connection.ProtocolStrategy = new AMCP.AMCPProtocolStrategy(this);
+            Connection.ConnectionStateChanged += server__ConnectionStateChanged;
 		}
 
 		#region Server notifications
-		void server__Connected(object sender, Svt.Network.NetworkEventArgs e)
-		{
-			server_.SendString("VERSION");
+        void server__ConnectionStateChanged(object sender, Network.ConnectionEventArgs e)
+        {
+            try
+            {
+                if (ConnectionStatusChanged != null)
+                    ConnectionStatusChanged(this, e);
+            }
+            catch { }
 
-			//Ask server for channels
-			server_.SendString("INFO");
+            if (e.Connected)
+            {
+                Connection.SendString("VERSION");
 
-			//ask server for templates
-			server_.SendString("TLS");
+                //Ask server for channels
+                Connection.SendString("INFO");
 
-			if (Connected != null)
-				Connected(this, e);
-		}
-		void server__Disconnected(object sender, Svt.Network.NetworkEventArgs e)
-		{
-			if (Disconnected != null)
-				Disconnected(this, e);
+                //For compability with legacy users
+                try
+                {
+                    if (Connected != null)
+                        Connected(this, new Svt.Network.NetworkEventArgs(e.Hostname, e.Port));
+                }
+                catch { }
+            }
+            else
+            {
+                try
+                {
+                    if (!bIsDisconnecting && Settings.AutoConnect)
+                    {
+                        Connection.ConnectionStateChanged -= server__ConnectionStateChanged;
+                        ReconnectionHelper = new Svt.Network.ReconnectionHelper(Connection, ReconnectInterval);
+                        ReconnectionHelper.Reconnected += ReconnectionHelper_Reconnected;
+                        ReconnectionHelper.Start();
+                    }
+                }
+                catch { }
+                bIsDisconnecting = false;
 
-			Channels.Clear();
-			Templates.Clear();
-		}
-		void server__FailedConnect(object sender, Svt.Network.NetworkEventArgs e)
-		{
-			if (FailedConnect != null)
-				FailedConnect(this, e);
-		}
-		void server__CaughtAsyncException(object sender, Svt.Network.ExceptionEventArgs e)
-		{
-			if (OnAsyncException != null)
-				OnAsyncException(this, e);
-		}
+                //For compability with legacy users
+                try
+                {
+                    if (Disconnected != null)
+                        Disconnected(this, new Svt.Network.NetworkEventArgs(e.Hostname, e.Port));
+                }
+                catch { }
+            }
+        }
+
+        void ReconnectionHelper_Reconnected(object sender, Network.ConnectionEventArgs e)
+        {
+            ReconnectionHelper.Close();
+            ReconnectionHelper = null;
+            Connection.ConnectionStateChanged += server__ConnectionStateChanged;
+
+            server__ConnectionStateChanged(Connection, e);
+        }
 		#endregion
 
         public void SendString(string command)
         {
             if (IsConnected)
-                server_.SendString(command);
+                Connection.SendString(command);
         }
 		public void RefreshMediafiles()
 		{
 			if (IsConnected)
-				server_.SendString("CLS");
+                Connection.SendString("CLS");
 		}
 		public void RefreshTemplates()
 		{
 			if (IsConnected)
-				server_.SendString("TLS");
+                Connection.SendString("TLS");
 		}
 		public void RefreshDatalist()
 		{
 			if (IsConnected)
-				server_.SendString("DATA LIST");
+                Connection.SendString("DATA LIST");
 		}
 		public void StoreData(string name, ICGDataContainer data)
 		{
-			if (IsConnected)
-				server_.SendString("DATA STORE \"" + name + "\" \"" + data.ToAMCPEscapedXml() + "\"");
+            if (IsConnected)
+                Connection.SendString(string.Format("DATA STORE \"{0}\" \"{1}\"", name, data.ToAMCPEscapedXml())); 
 		}
 		public void RetrieveData(string name)
 		{
 			if (IsConnected)
-				server_.SendString("DATA RETRIEVE \"" + name + "\"");
+                Connection.SendString(string.Format("DATA RETRIEVE \"{0}\"", name));
 		}
-
-		#region Properties
-		public List<Channel> Channels
-		{
-			get { return channels_; }
-		}
-		public CasparDeviceSettings Settings
-		{
-			get { return settings_; }
-		}
-		public TemplatesCollection Templates
-		{
-			get { return templates_; }
-		}
-		public List<MediaInfo> Mediafiles
-		{
-			get { return mediafiles_; }
-		}
-		public List<string> Datafiles
-		{
-			get { return datafiles_; }
-		}
-		public bool IsConnected
-		{
-			get { return (server_ == null) ? false : server_.IsConnected; }
-		}
-		internal Svt.Network.ServerConnection Server
-		{
-			get { return server_; }
-		}
-		public string Version
-		{
-			get { return version_; }
-		}
-		#endregion
 
 		#region Connection
-		public bool Connect()
+        public bool Connect(string host, int port)
+        {
+            return Connect(host, port, false);
+        }
+
+        public bool Connect(string host, int port, bool reconnect)
+        {
+            if (!IsConnected)
+            {
+                Settings.Hostname = host;
+                Settings.Port = port;
+                Settings.AutoConnect = reconnect;
+                return Connect();
+            }
+            return false;
+        }
+        public bool Connect()
 		{
 			if (!IsConnected)
 			{
-				server_.Connect(Settings.Hostname, Settings.Port);
+                Connection.InitiateConnection(Settings.Hostname, Settings.Port);
 				return true;
 			}
 			return false;
@@ -151,34 +178,46 @@ namespace Svt.Caspar
 
 		public void Disconnect()
 		{
-			server_.Disconnect();
+            bIsDisconnecting = true;
+            Connection.CloseConnection();
 		}
 		#endregion
 
 		#region AMCP-protocol callbacks
 		internal void OnUpdatedChannelInfo(List<ChannelInfo> channels)
 		{
-			foreach (ChannelInfo info in channels)
+            List<Channel> newChannels = new List<Channel>();
+			
+            foreach (ChannelInfo info in channels)
 			{
-				if (channels_.Count < info.ID)
-					channels_.Add(new Channel(this, info.ID, info.VideoMode));
-				else
-					channels_[info.ID-1].VideoMode = info.VideoMode;
+                if (info.ID <= Channels.Count)
+                {
+                    Channels[info.ID - 1].VideoMode = info.VideoMode;
+                    newChannels.Add(Channels[info.ID - 1]);
+                }
+                else
+                    newChannels.Add(new Channel(Connection, info.ID, info.VideoMode));
 			}
+
+            Channels = newChannels;
 
 			if (UpdatedChannels != null)
 				UpdatedChannels(this, EventArgs.Empty);
 		}
+
 		internal void OnUpdatedTemplatesList(List<TemplateInfo> templates)
 		{
-			Templates.Populate(templates);
+            TemplatesCollection newTemplates = new TemplatesCollection();
+            newTemplates.Populate(templates);
+            Templates = newTemplates;
 
 			if (UpdatedTemplates != null)
 				UpdatedTemplates(this, EventArgs.Empty);
 		}
+
 		internal void OnUpdatedMediafiles(List<MediaInfo> mediafiles)
 		{
-			System.Threading.Interlocked.Exchange<List<MediaInfo>>(ref mediafiles_, mediafiles);
+            Mediafiles = mediafiles;
 
 			if (UpdatedMediafiles != null)
 				UpdatedMediafiles(this, EventArgs.Empty);
@@ -186,7 +225,7 @@ namespace Svt.Caspar
 
 		internal void OnVersion(string version)
 		{
-			version_ = version;
+			Version = version;
 		}
 
 		internal void OnLoad(string clipname)
@@ -199,7 +238,7 @@ namespace Svt.Caspar
 
 		internal void OnUpdatedDataList(List<string> datafiles)
 		{
-			System.Threading.Interlocked.Exchange<List<string>>(ref datafiles_, datafiles);
+            Datafiles = datafiles;
 
 			if (UpdatedDatafiles != null)
 				UpdatedDatafiles(this, EventArgs.Empty);
@@ -225,25 +264,8 @@ namespace Svt.Caspar
 
 	public class CasparDeviceSettings
 	{
-		private string hostname_;
-		public string Hostname
-		{
-			get { return hostname_; }
-			set { hostname_ = value; }
-		}
-
-		private int port_;
-		public int Port
-		{
-			get { return port_; }
-			set { port_ = value; }
-		}
-
-		private bool autoconnect_;
-		public bool AutoConnect
-		{
-			get { return autoconnect_; }
-			set { autoconnect_ = value; }
-		}
+        public string Hostname { get; set; }
+        public int Port { get; set; }
+        public bool AutoConnect { get; set; }
 	}
 }

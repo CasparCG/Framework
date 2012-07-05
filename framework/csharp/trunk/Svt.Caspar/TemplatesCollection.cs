@@ -9,6 +9,8 @@ namespace Svt.Caspar
 		Dictionary<string, List<TemplateInfo>> templates_ = new Dictionary<string, List<TemplateInfo>>();
 		List<TemplateInfo> all_ = new List<TemplateInfo>();
 
+        public static TemplatesCollection Empty { get { return new TemplatesCollection(); } }
+
 		internal TemplatesCollection()
 		{ }
 
@@ -27,8 +29,8 @@ namespace Svt.Caspar
 				newAll.Add(template);
 			}
 
-			System.Threading.Interlocked.Exchange<Dictionary<string, List<TemplateInfo>>>(ref templates_, newTemplates);
-			System.Threading.Interlocked.Exchange<List<TemplateInfo>>(ref all_, newAll);			
+			templates_ = newTemplates;
+            all_ = newAll;
 		}
 
 		public List<TemplateInfo> GetTemplatesInFolder(string folder)
