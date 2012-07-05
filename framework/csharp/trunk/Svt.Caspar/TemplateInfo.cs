@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Svt.Caspar
 {
-	public class TemplateInfo
+	public class TemplateInfo : ICloneable
 	{
 		internal TemplateInfo(string folder, string name, Int64 size, DateTime updated)
 		{
@@ -14,37 +14,21 @@ namespace Svt.Caspar
 			LastUpdated = updated;
 		}
 
-		private string folder_;
-		public string Folder
-		{
-			get { return folder_; }
-			internal set { folder_ = value; }
-		}
-		private string name_;
-		public string Name
-		{
-			get { return name_; }
-			internal set { name_ = value; }
-		}
-		public string FullName { get { return (Folder.Length > 0) ? (Folder + "/" + Name) : (Name); } }
+        public string Folder { get; internal set; }
+        public string Name { get; internal set; }
+        public Int64 Size { get; internal set; }
+        public DateTime LastUpdated { get; internal set; }
 
-		private Int64 size_;
-		public Int64 Size
-		{
-			get { return size_; }
-			internal set { size_ = value; }
-		}
-
-		private DateTime updated_;
-		public DateTime LastUpdated
-		{
-			get { return updated_; }
-			internal set { updated_ = value; }
-		}
+        public string FullName { get { return (Folder.Length > 0) ? (Folder + "/" + Name) : (Name); } }
 
 		public override string ToString()
 		{
 			return Name;
 		}
-	}
+	
+        public object Clone()
+        {
+            return new TemplateInfo(Folder, Name, Size, LastUpdated);
+        }
+    }
 }

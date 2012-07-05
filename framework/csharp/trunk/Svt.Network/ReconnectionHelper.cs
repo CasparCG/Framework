@@ -9,21 +9,29 @@ namespace Svt.Network
 	{
 		System.Timers.Timer Timer { get; set; }
 		ServerConnection Connection { get; set; }
+        int Interval { get; set; }
+
+        public bool Running { get { return (Timer != null) ? Timer.Enabled : false; } }
 
 		public event EventHandler<ConnectionEventArgs> Reconnected;
 
 		public ReconnectionHelper(ServerConnection connection, int interval)
 		{
 			Connection = connection;
-			Connection.ConnectionStateChanged += Connection_ConnectionStateChanged;
-
-			Timer = new System.Timers.Timer(interval);
-			Timer.AutoReset = false;
-			Timer.Elapsed += Timer_Elapsed;
+            Interval = interval;
 		}
 
 		public void Start()
 		{
+			Connection.ConnectionStateChanged += Connection_ConnectionStateChanged;
+
+            if (Timer == null)
+            {
+                Timer = new System.Timers.Timer(Interval);
+                Timer.AutoReset = false;
+                Timer.Elapsed += Timer_Elapsed;
+            }
+
 			Timer.Start();
 		}
 
@@ -48,7 +56,11 @@ namespace Svt.Network
 		{
 			if (e.Connected)
 			{
-				OnReconnected(e);
+                Connection.ConnectionStateChanged -= Connection_ConnectionStateChanged;
+                OnReconnected(e);
+                Timer.Elapsed -= Timer_Elapsed;
+                Timer.Close();
+                Timer = null;
 			}
 			else
 				Timer.Start();
