@@ -26,7 +26,14 @@ namespace Svt.Caspar.AMCP
 		INFO,
 		DATA,
 		CLEAR,
-		SET
+		SET,
+        MIXER,
+        CALL,
+        REMOVE,
+        ADD,
+        SWAP,
+        STATUS,
+        Undefined
 	}
 	internal enum AMCPError
 	{
