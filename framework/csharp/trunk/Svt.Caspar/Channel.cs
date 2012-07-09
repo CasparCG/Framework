@@ -178,7 +178,13 @@ namespace Svt.Caspar
 
 
 
-
+        public void ClearMixer(int videoLayer)
+        {
+            if (videoLayer == -1)
+                Connection.SendString(string.Format(CultureInfo.InvariantCulture, "MIXER {0} CLEAR", ID));
+            else
+                Connection.SendString(string.Format(CultureInfo.InvariantCulture, "MIXER {0}-{1} VOLUME {2} {3} {4}", ID, videoLayer, volume, duration, Enum.GetName(typeof(Easing), easing)));
+        }
 
         public void SetVolume(int videoLayer, float volume, int duration, Easing easing)
         {
