@@ -79,7 +79,10 @@ namespace Svt.Caspar
                 try
                 {
                     if (Connected != null)
+                    {
+                        Connection.SendString("TLS");
                         Connected(this, new Svt.Network.NetworkEventArgs(e.Hostname, e.Port));
+                    }
                 }
                 catch { }
             }
