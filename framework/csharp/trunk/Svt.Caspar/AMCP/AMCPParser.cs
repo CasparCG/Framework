@@ -186,8 +186,17 @@ namespace Svt.Caspar.AMCP
 
 		bool ParseSuccessHeader(string[] tokens)
 		{
-			if (tokens.Length >= 3)
-				nextParserEventArgs_.Command = (AMCPCommand)Enum.Parse(typeof(AMCPCommand), tokens[1]);
+            if (tokens.Length >= 3)
+            {
+                try
+                {
+                    nextParserEventArgs_.Command = (AMCPCommand)Enum.Parse(typeof(AMCPCommand), tokens[1]);
+                }
+                catch 
+                {
+                    nextParserEventArgs_.Command = AMCPCommand.Undefined;
+                }
+            }
 
 			if (tokens.Length >= 4)
 				nextParserEventArgs_.Subcommand = tokens[2];
@@ -212,7 +221,16 @@ namespace Svt.Caspar.AMCP
 			nextParserEventArgs_.Error = ErrorFactory(tokens[0]);
 
 			if (tokens.Length >= 3)
-				nextParserEventArgs_.Command = (AMCPCommand)Enum.Parse(typeof(AMCPCommand), tokens[1]);
+            {
+                try
+                {
+                    nextParserEventArgs_.Command = (AMCPCommand)Enum.Parse(typeof(AMCPCommand), tokens[1]);
+                }
+                catch
+                {
+                    nextParserEventArgs_.Command = AMCPCommand.Undefined;
+                }
+            }
 
 			return true;
 		}
@@ -222,7 +240,16 @@ namespace Svt.Caspar.AMCP
 			nextParserEventArgs_.Error = ErrorFactory(tokens[0]);
 
 			if (tokens.Length >= 3)
-				nextParserEventArgs_.Command = (AMCPCommand)Enum.Parse(typeof(AMCPCommand), tokens[1]);
+            {
+                try
+                {
+                    nextParserEventArgs_.Command = (AMCPCommand)Enum.Parse(typeof(AMCPCommand), tokens[1]);
+                }
+                catch
+                {
+                    nextParserEventArgs_.Command = AMCPCommand.Undefined;
+                }
+            }
 
 			return true;
 		}
