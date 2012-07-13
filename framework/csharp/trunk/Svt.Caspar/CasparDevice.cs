@@ -6,11 +6,8 @@ namespace Svt.Caspar
 {
 	public class CasparDevice
 	{
-        public const int DefaultReconnectInterval = 5;
-
         internal Svt.Network.ServerConnection Connection { get; private set; }
         private Svt.Network.ReconnectionHelper ReconnectionHelper { get; set; }
-        public int ReconnectInterval { get; set; }
 
         public CasparDeviceSettings Settings { get; private set; }
         public List<Channel> Channels { get; private set; }
@@ -39,14 +36,12 @@ namespace Svt.Caspar
 		public event EventHandler<EventArgs> UpdatedMediafiles;
 		public event EventHandler<EventArgs> UpdatedDatafiles;
 
-        bool bIsDisconnecting = false;
+        volatile bool bIsDisconnecting = false;
 
 		public CasparDevice()
 		{
-            Connection = new Network.ServerConnection();
-            ReconnectInterval = DefaultReconnectInterval;
-
             Settings = new CasparDeviceSettings();
+            Connection = new Network.ServerConnection();
             Channels = new List<Channel>();
 		    Templates = new TemplatesCollection();
 		    Mediafiles = new List<MediaInfo>();
@@ -88,18 +83,21 @@ namespace Svt.Caspar
             }
             else
             {
-                try
+                lock (this)
                 {
-                    if (!bIsDisconnecting && Settings.AutoConnect)
+                    try
                     {
-                        Connection.ConnectionStateChanged -= server__ConnectionStateChanged;
-                        ReconnectionHelper = new Svt.Network.ReconnectionHelper(Connection, ReconnectInterval);
-                        ReconnectionHelper.Reconnected += ReconnectionHelper_Reconnected;
-                        ReconnectionHelper.Start();
+                        if (!bIsDisconnecting && Settings.AutoConnect)
+                        {
+                            Connection.ConnectionStateChanged -= server__ConnectionStateChanged;
+                            ReconnectionHelper = new Svt.Network.ReconnectionHelper(Connection, Settings.ReconnectInterval);
+                            ReconnectionHelper.Reconnected += ReconnectionHelper_Reconnected;
+                            ReconnectionHelper.Start();
+                        }
                     }
+                    catch { }
+                    bIsDisconnecting = false;
                 }
-                catch { }
-                bIsDisconnecting = false;
 
                 //For compability with legacy users
                 try
@@ -113,10 +111,12 @@ namespace Svt.Caspar
 
         void ReconnectionHelper_Reconnected(object sender, Network.ConnectionEventArgs e)
         {
-            ReconnectionHelper.Close();
-            ReconnectionHelper = null;
-            Connection.ConnectionStateChanged += server__ConnectionStateChanged;
-
+            lock (this)
+            {
+                ReconnectionHelper.Close();
+                ReconnectionHelper = null;
+                Connection.ConnectionStateChanged += server__ConnectionStateChanged;
+            }
             server__ConnectionStateChanged(Connection, e);
         }
 		#endregion
@@ -181,7 +181,17 @@ namespace Svt.Caspar
 
 		public void Disconnect()
 		{
-            bIsDisconnecting = true;
+            lock (this)
+            {
+                bIsDisconnecting = true;
+                if (ReconnectionHelper != null)
+                {
+                    ReconnectionHelper.Close();
+                    ReconnectionHelper = null;
+                    Connection.ConnectionStateChanged += server__ConnectionStateChanged;
+                }
+            }
+
             Connection.CloseConnection();
 		}
 		#endregion
@@ -267,8 +277,16 @@ namespace Svt.Caspar
 
 	public class CasparDeviceSettings
 	{
+        public const int DefaultReconnectInterval = 5000;
+
+        public CasparDeviceSettings()
+        {
+            ReconnectInterval = DefaultReconnectInterval;
+        }
+
         public string Hostname { get; set; }
         public int Port { get; set; }
         public bool AutoConnect { get; set; }
-	}
+        public int ReconnectInterval { get; set; }
+    }
 }
