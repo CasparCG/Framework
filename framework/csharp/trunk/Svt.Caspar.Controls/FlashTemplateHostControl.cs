@@ -36,7 +36,7 @@ namespace Svt.Caspar.Controls
 			InitializeComponent();
 
 			PrepareNewFlash();
-			DisplayNewFlash();
+			//DisplayNewFlash();
 
 			TemplateFolder = Environment.CurrentDirectory;
             AspectControl = Aspects.Aspect169;
@@ -45,18 +45,24 @@ namespace Svt.Caspar.Controls
 		Svt.Caspar.Controls.ShockwaveFlashControl newFlashControl = null;
 		public void PrepareNewFlash()
 		{
-			if (newFlashControl == null)
-			{
-				newFlashControl = new Svt.Caspar.Controls.ShockwaveFlashControl();
-				newFlashControl.Location = new System.Drawing.Point(25, 24);
-				newFlashControl.Name = "shockwaveFlashControl1";
-				newFlashControl.Size = new System.Drawing.Size(265, 202);
-				newFlashControl.TabIndex = 0;
+            //if (newFlashControl == null)
+            //{
+            //    newFlashControl = new Svt.Caspar.Controls.ShockwaveFlashControl();
+            //    newFlashControl.Location = new System.Drawing.Point(25, 24);
+            //    newFlashControl.Name = "shockwaveFlashControl1";
+            //    newFlashControl.Size = new System.Drawing.Size(265, 202);
+            //    newFlashControl.TabIndex = 0;
 
-				newFlashControl.FlashActiveX.BackgroundColor = Color.FromArgb(0, bgColor).ToArgb();
-				if (!string.IsNullOrEmpty(templateHost_) && System.IO.File.Exists(templateHost_))
-					newFlashControl.FlashActiveX.Movie = templateHost_;
-			}
+            //    newFlashControl.FlashActiveX.BackgroundColor = Color.FromArgb(0, bgColor).ToArgb();
+            //    if (!string.IsNullOrEmpty(templateHost_) && System.IO.File.Exists(templateHost_))
+            //        newFlashControl.FlashActiveX.Movie = templateHost_;
+            //}
+
+            this.shockwaveFlashControl1.Location = new System.Drawing.Point(25, 24);
+            this.shockwaveFlashControl1.Size = new System.Drawing.Size(265, 202);
+            this.shockwaveFlashControl1.FlashActiveX.BackgroundColor = Color.FromArgb(0, bgColor).ToArgb();
+            if (!string.IsNullOrEmpty(templateHost_) && System.IO.File.Exists(templateHost_))
+                this.shockwaveFlashControl1.FlashActiveX.Movie = templateHost_;
 		}
 
 		public void DisplayNewFlash()

@@ -1,4 +1,5 @@
-﻿namespace Svt.Caspar.Controls
+﻿using System.Drawing;
+namespace Svt.Caspar.Controls
 {
 	partial class FlashTemplateHostControl
 	{
@@ -28,16 +29,25 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.SuspendLayout();
-			// 
-			// FlashTemplateHostControl
-			// 
-			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.Name = "FlashTemplateHostControl";
-			this.Size = new System.Drawing.Size(315, 254);
-			this.SizeChanged += new System.EventHandler(this.control_Resize);
-			this.ResumeLayout(false);
+            this.shockwaveFlashControl1 = new Svt.Caspar.Controls.ShockwaveFlashControl();
+            this.SuspendLayout();
+            // 
+            // shockwaveFlashControl1
+            // 
+            this.shockwaveFlashControl1.Location = new System.Drawing.Point(0, 0);
+            this.shockwaveFlashControl1.Name = "shockwaveFlashControl1";
+            this.shockwaveFlashControl1.Size = new System.Drawing.Size(315, 254);
+            this.shockwaveFlashControl1.TabIndex = 0;
+            // 
+            // FlashTemplateHostControl
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.shockwaveFlashControl1);
+            this.Name = "FlashTemplateHostControl";
+            this.Size = new System.Drawing.Size(315, 254);
+            this.SizeChanged += new System.EventHandler(this.control_Resize);
+            this.ResumeLayout(false);
 
 		}
 
