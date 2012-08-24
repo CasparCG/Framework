@@ -13,12 +13,6 @@ namespace Svt.Caspar.Controls
 		public ShockwaveFlashControl()
 		{
 			InitializeComponent();
-			this.Load += new EventHandler(ShockwaveFlashControl_Load);
-		}
-
-		void ShockwaveFlashControl_Load(object sender, EventArgs e)
-		{
-			int a = 01;
 		}
 
 		public AxShockwaveFlashObjects.AxShockwaveFlash FlashActiveX { get { return axShockwaveFlash1; } }
