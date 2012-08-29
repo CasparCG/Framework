@@ -49,6 +49,8 @@ namespace Svt.Caspar.Controls
             this.shockwaveFlashControl1.FlashActiveX.BackgroundColor = Color.FromArgb(0, bgColor).ToArgb();
             if (!string.IsNullOrEmpty(templateHost_) && System.IO.File.Exists(templateHost_))
                 this.shockwaveFlashControl1.FlashActiveX.Movie = templateHost_;
+
+            control_Resize(this, EventArgs.Empty);
 		}
 
 		private Color bgColor;
@@ -125,7 +127,6 @@ namespace Svt.Caspar.Controls
 		public void Clear()
 		{
 			PrepareNewFlash();
-			DisplayNewFlash();
 		}
 
 		[Obsolete("use ICGDataContainer for CGData instead", false)]
