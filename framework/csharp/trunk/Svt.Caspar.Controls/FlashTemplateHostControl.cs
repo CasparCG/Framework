@@ -44,8 +44,8 @@ namespace Svt.Caspar.Controls
 		Svt.Caspar.Controls.ShockwaveFlashControl newFlashControl = null;
 		public void PrepareNewFlash()
 		{
-            this.shockwaveFlashControl1.Location = new System.Drawing.Point(25, 24);
-            this.shockwaveFlashControl1.Size = new System.Drawing.Size(265, 202);
+            //this.shockwaveFlashControl1.Location = new System.Drawing.Point(25, 24);
+            //this.shockwaveFlashControl1.Size = new System.Drawing.Size(265, 202);
             this.shockwaveFlashControl1.FlashActiveX.BackgroundColor = Color.FromArgb(0, bgColor).ToArgb();
             if (!string.IsNullOrEmpty(templateHost_) && System.IO.File.Exists(templateHost_))
                 this.shockwaveFlashControl1.FlashActiveX.Movie = templateHost_;
