@@ -25,7 +25,7 @@
 
 package se.svt.caspar.templateHost 
 {
-	 [SWF(width="1920", height="1080", frameRate="50", backgroundColor="#FFFFFF")]
+	 //[SWF(width="1920", height="1080", frameRate="50", backgroundColor="#FFFFFF")]
 	
 	import flash.display.Loader;
 	import flash.display.MovieClip;

@@ -8,8 +8,8 @@
     <movie fps="60" />
     <movie width="1280" />
     <movie height="720" />
-    <movie version="10" />
-    <movie minorVersion="3" />
+    <movie version="11" />
+    <movie minorVersion="8" />
     <movie platform="Flash Player" />
     <movie background="#FFFFFF" />
   </output>
@@ -21,9 +21,11 @@
   <!-- Build options -->
   <build>
     <option accessible="False" />
+    <option advancedTelemetry="False" />
     <option allowSourcePathOverlap="False" />
     <option benchmark="False" />
     <option es="False" />
+    <option inline="False" />
     <option locale="" />
     <option loadConfig="" />
     <option optimize="True" />
@@ -75,7 +77,7 @@
   </compileTargets>
   <!-- Paths to exclude from the Project Explorer tree -->
   <hiddenPaths>
-    <!-- example: <hidden path="..." /> -->
+    <hidden path="obj" />
   </hiddenPaths>
   <!-- Executed before build -->
   <preBuildCommand>SubWCRev "$(ProjectDir)" "$(ProjectDir)/src/se/svt/caspar/Version.tmpl" "$(ProjectDir)/src/se/svt/caspar/Version.as"</preBuildCommand>
