@@ -4,7 +4,7 @@
   <output>
     <movie outputType="Application" />
     <movie input="" />
-    <movie path="bin\cg20.fth.720p6000" />
+    <movie path="bin\cg20.fth.720p2997" />
     <movie fps="60" />
     <movie width="1280" />
     <movie height="720" />
