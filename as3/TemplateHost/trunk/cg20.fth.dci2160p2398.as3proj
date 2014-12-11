@@ -4,8 +4,8 @@
   <output>
     <movie outputType="Application" />
     <movie input="" />
-    <movie path="bin\cg20.fth.dci2048p2500" />
-    <movie fps="25" />
+    <movie path="bin\cg20.fth.dci2160p2398" />
+    <movie fps="24" />
     <movie width="4096" />
     <movie height="2160" />
     <movie version="11" />
