@@ -18,33 +18,31 @@
 *
 * Author: Helge Norberg
 */
-package se.svt.caspar.amcp;
+package se.svt.caspar.producer;
 
-import se.svt.caspar.EaseableDouble;
+import se.svt.caspar.Channel;
+import se.svt.caspar.Layer;
+import se.svt.caspar.Producer;
 
-class AdjustmentDouble extends EaseableDouble {
-	private final String mMixerProperty;
-    private final AmcpLayer mLayer;
+/**
+ * TODO documentation.
+ *
+ * @author Helge Norberg, helge.norberg@svt.se
+ */
+public class Route implements Producer {
+    private final String mSource;
 
-	public AdjustmentDouble(AmcpLayer layer, double defaultValue, String mixerProperty) {
-		super(defaultValue);
+    public Route(Channel channel) {
+        mSource = String.valueOf(channel.channelId());
+    }
 
-		mLayer = layer;
-		mMixerProperty = mixerProperty;
-		setStale();
-	}
+    public Route(Layer layer) {
+        mSource = layer.channel().channelId() + "-" + layer.layerId();
+    }
 
-	@Override
-	protected double doFetch() {
-		return Double.parseDouble(
-				mLayer.sendCommandExpectSingle("MIXER", mMixerProperty));
-	}
-
-	/** {@inheritDoc} */
-	@Override
-	protected void doSubmit(double value) {
-		mLayer.sendCommand("MIXER", mMixerProperty + " " + value
-				+ AmcpUtils.getEasingSuffix(this)
-				+ (defer() ? " DEFER" : ""));
-	}
+    /** {@inheritDoc} */
+    @Override
+    public String getParameters() {
+        return "route://" + mSource;
+    }
 }

@@ -28,6 +28,7 @@ import se.svt.caspar.Adjustments;
 import se.svt.caspar.Call;
 import se.svt.caspar.CallWithReturn;
 import se.svt.caspar.Channel;
+import se.svt.caspar.ChromaKey;
 import se.svt.caspar.Corners;
 import se.svt.caspar.CornersView;
 import se.svt.caspar.EaseableDouble;
@@ -57,6 +58,7 @@ public class AmcpLayer implements Layer {
     private final EaseableDouble mRotation;
     private final AmcpCropRectangle mCrop;
     private final AmcpPerspectiveCorners mPerspective;
+    private final AmcpChromaKey mChromaKey;
     private final BooleanProperty mMipmapping;
 
 	/**
@@ -73,6 +75,7 @@ public class AmcpLayer implements Layer {
 		mRotation = new AdjustmentDouble(this, 0, "ROTATION");
 		mCrop = new AmcpCropRectangle(this);
         mPerspective = new AmcpPerspectiveCorners(this);
+        mChromaKey = new AmcpChromaKey(this);
         mMipmapping = new AdjustmentBoolean(this, false, "MIPMAP");
 
 	}
@@ -92,6 +95,12 @@ public class AmcpLayer implements Layer {
 	@Override
 	public Layer above() {
 	    return mChannel.layer(mLayerId + 1);
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public Layer below() {
+        return mChannel.layer(mLayerId - 1);
 	}
 
 	/** {@inheritDoc} */
@@ -188,6 +197,12 @@ public class AmcpLayer implements Layer {
 	@Override
 	public Levels levels() {
 		return mLevels;
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public ChromaKey chromaKey() {
+	    return mChromaKey;
 	}
 
 	/** {@inheritDoc} */
@@ -309,6 +324,12 @@ public class AmcpLayer implements Layer {
 				"CALL", "B " + call.getParameters());
 
 		return call.parseResult(result);
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public void swap(Layer other, boolean transformsAlso) {
+	    sendCommand("SWAP", other.channel().channelId() + "-" + other.layerId() + (transformsAlso ? " TRANSFORMS" : ""));
 	}
 
 	public List<String> sendCommand(String command, String parameters) {

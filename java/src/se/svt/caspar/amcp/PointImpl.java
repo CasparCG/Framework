@@ -44,11 +44,19 @@ public class PointImpl implements Point {
         mY = y;
     }
 
+    public void unbind() {
+        mX.unbind();
+        mY.unbind();
+    }
+
     /** {@inheritDoc} */
     @Override
     public void position(double x, double y) {
-        mX.set(x);
-        mY.set(y);
+        if (!mX.isBound())
+            mX.set(x);
+
+        if (!mY.isBound())
+            mY.set(y);
     }
 
     /** {@inheritDoc} */

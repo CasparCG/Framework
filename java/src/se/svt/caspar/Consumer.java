@@ -18,33 +18,17 @@
 *
 * Author: Helge Norberg
 */
-package se.svt.caspar.amcp;
+package se.svt.caspar;
 
-import se.svt.caspar.EaseableDouble;
-
-class AdjustmentDouble extends EaseableDouble {
-	private final String mMixerProperty;
-    private final AmcpLayer mLayer;
-
-	public AdjustmentDouble(AmcpLayer layer, double defaultValue, String mixerProperty) {
-		super(defaultValue);
-
-		mLayer = layer;
-		mMixerProperty = mixerProperty;
-		setStale();
-	}
-
-	@Override
-	protected double doFetch() {
-		return Double.parseDouble(
-				mLayer.sendCommandExpectSingle("MIXER", mMixerProperty));
-	}
-
-	/** {@inheritDoc} */
-	@Override
-	protected void doSubmit(double value) {
-		mLayer.sendCommand("MIXER", mMixerProperty + " " + value
-				+ AmcpUtils.getEasingSuffix(this)
-				+ (defer() ? " DEFER" : ""));
-	}
+/**
+ * Abstracts a consumer on the server side, giving the parameters required for
+ * the consumer to be activated on the server side.
+ *
+ * @author Helge Norberg, helge.norberg@svt.se
+ */
+public interface Consumer {
+    /**
+     * @return the parameters required for the server to create this consumer.
+     */
+    String getParameters();
 }

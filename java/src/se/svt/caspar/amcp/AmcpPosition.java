@@ -64,7 +64,9 @@ public abstract class AmcpPosition extends AbstractEaseableRefreshable implement
     	boolean autoSubmit = autoSubmit();
 
     	try {
+    	    mPositionX.unbind();
     		mPositionX.set(x);
+    		mPositionY.unbind();
     		mPositionY.set(y);
     	} finally {
     		autoSubmit(autoSubmit);
@@ -103,7 +105,10 @@ public abstract class AmcpPosition extends AbstractEaseableRefreshable implement
     			"MIXER", getGeometryName());
     	String[] parameters = reply.split(" ");
 
-    	mPositionX.set(Double.parseDouble(parameters[0]));
-    	mPositionY.set(Double.parseDouble(parameters[1]));
+    	if (!mPositionX.isBound())
+    	    mPositionX.set(Double.parseDouble(parameters[0]));
+
+    	if (!mPositionY.isBound())
+    	    mPositionY.set(Double.parseDouble(parameters[1]));
     }
 }

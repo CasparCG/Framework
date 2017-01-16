@@ -18,33 +18,26 @@
 *
 * Author: Helge Norberg
 */
-package se.svt.caspar.amcp;
+package se.svt.caspar;
 
-import se.svt.caspar.EaseableDouble;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.DoubleProperty;
 
-class AdjustmentDouble extends EaseableDouble {
-	private final String mMixerProperty;
-    private final AmcpLayer mLayer;
-
-	public AdjustmentDouble(AmcpLayer layer, double defaultValue, String mixerProperty) {
-		super(defaultValue);
-
-		mLayer = layer;
-		mMixerProperty = mixerProperty;
-		setStale();
-	}
-
-	@Override
-	protected double doFetch() {
-		return Double.parseDouble(
-				mLayer.sendCommandExpectSingle("MIXER", mMixerProperty));
-	}
-
-	/** {@inheritDoc} */
-	@Override
-	protected void doSubmit(double value) {
-		mLayer.sendCommand("MIXER", mMixerProperty + " " + value
-				+ AmcpUtils.getEasingSuffix(this)
-				+ (defer() ? " DEFER" : ""));
-	}
+/**
+ * TODO documentation.
+ *
+ * @author Helge Norberg, helge.norberg@svt.se
+ */
+public interface ChromaKey {
+    Layer layer();
+    void reset();
+    BooleanProperty enable();
+    DoubleProperty targetHue();
+    DoubleProperty minSaturation();
+    DoubleProperty minBrightness();
+    DoubleProperty hueWidth();
+    DoubleProperty softness();
+    DoubleProperty spill();
+    DoubleProperty spillDarken();
+    BooleanProperty showMask();
 }

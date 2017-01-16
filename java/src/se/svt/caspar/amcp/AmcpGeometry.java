@@ -40,6 +40,8 @@ public abstract class AmcpGeometry extends AmcpPosition implements Geometry {
 		super(layer);
 		mScaleX = new TouchingDouble();
 		mScaleY = new TouchingDouble();
+		mScaleX.get();
+		mScaleY.get();
 	}
 
 	@Override

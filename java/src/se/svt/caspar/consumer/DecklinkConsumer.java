@@ -18,33 +18,30 @@
 *
 * Author: Helge Norberg
 */
-package se.svt.caspar.amcp;
+package se.svt.caspar.consumer;
 
-import se.svt.caspar.EaseableDouble;
+import se.svt.caspar.Consumer;
 
-class AdjustmentDouble extends EaseableDouble {
-	private final String mMixerProperty;
-    private final AmcpLayer mLayer;
+/**
+ * TODO documentation.
+ *
+ * @author Helge Norberg, helge.norberg@svt.se
+ */
+public class DecklinkConsumer implements Consumer {
 
-	public AdjustmentDouble(AmcpLayer layer, double defaultValue, String mixerProperty) {
-		super(defaultValue);
+    /**
+     * Constructor.
+     *
+     */
+    public DecklinkConsumer() {
+        // TODO Auto-generated constructor stub
+    }
 
-		mLayer = layer;
-		mMixerProperty = mixerProperty;
-		setStale();
-	}
+    /** {@inheritDoc} */
+    @Override
+    public String getParameters() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	protected double doFetch() {
-		return Double.parseDouble(
-				mLayer.sendCommandExpectSingle("MIXER", mMixerProperty));
-	}
-
-	/** {@inheritDoc} */
-	@Override
-	protected void doSubmit(double value) {
-		mLayer.sendCommand("MIXER", mMixerProperty + " " + value
-				+ AmcpUtils.getEasingSuffix(this)
-				+ (defer() ? " DEFER" : ""));
-	}
 }

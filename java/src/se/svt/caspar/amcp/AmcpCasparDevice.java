@@ -67,13 +67,13 @@ public class AmcpCasparDevice implements CasparDevice {
 			throw new RuntimeException(e);
 		}
 
-		/*for (String line : sendCommand("INFO")) {
+		for (String line : sendCommand("INFO")) {
 			int channelId = Integer.parseInt(line.split(" ")[0]);
 			mChannels.put(channelId, new AmcpChannel(this, channelId));
-		}*/
+		}
 
-		mChannels.put(1, new AmcpChannel(this, 1));
-        mChannels.put(2, new AmcpChannel(this, 2));
+		/*mChannels.put(1, new AmcpChannel(this, 1));
+        mChannels.put(2, new AmcpChannel(this, 2));*/
 	}
 
 	@Override
@@ -122,7 +122,7 @@ public class AmcpCasparDevice implements CasparDevice {
 	}
 
 	public List<String> sendCommand(String singleLine) {
-		return sendCommand(Arrays.asList(singleLine));
+		return sendCommand(Arrays.asList(singleLine), true);
 	}
 
 	public String sendCommandExpectSingle(String singleLine) {
@@ -139,13 +139,16 @@ public class AmcpCasparDevice implements CasparDevice {
 		return reply.get(0);
 	}
 
-	public List<String> sendCommand(List<String> lines) {
+	public List<String> sendCommand(List<String> lines, boolean waitForReply) {
 		String reply;
 
 		try {
 			mWriter.append(lines.get(0)).append("\r\n").flush();
 
-			reply = mReader.readLine();
+			if (waitForReply)
+			    reply = mReader.readLine();
+			else
+			    reply = "202 OK";
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

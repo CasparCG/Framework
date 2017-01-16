@@ -29,6 +29,7 @@ import se.svt.caspar.Producer;
  */
 public enum Color implements Producer {
 	EMPTY,
+	BLACK,
 	RED,
 	BLUE;
 

@@ -36,6 +36,7 @@ public interface Layer {
 	int layerId();
 
 	Layer above();
+    Layer below();
 
 	/**
 	 * @return the geometry of the mixer fill. The coordinate system is between
@@ -80,6 +81,7 @@ public interface Layer {
 	Adjustments adjustments();
 
 	Levels levels();
+	ChromaKey chromaKey();
 
 	/**
 	 * Load a producer directly in the layer foreground, without starting to
@@ -103,6 +105,7 @@ public interface Layer {
 	void call(Call call);
 	void callBg(Call call);
 	void executeCustomCommand(String command, String parameters);
+	void swap(Layer other, boolean transformsAlso);
 	<R> R call(CallWithReturn<R> call);
 	<R> R callBg(CallWithReturn<R> call);
 }

@@ -73,9 +73,13 @@ public abstract class AmcpCorners extends AbstractEaseableRefreshable implements
         boolean autoSubmit = autoSubmit();
 
         try {
+            mUpperLeft.unbind();
             mUpperLeft.position(upperLeftX, upperLeftY);
+            mUpperRight.unbind();
             mUpperRight.position(upperRightX, upperRightY);
+            mLowerRight.unbind();
             mLowerRight.position(lowerRightX, lowerRightY);
+            mLowerLeft.unbind();
             mLowerLeft.position(lowerLeftX, lowerLeftY);
         } finally {
             autoSubmit(autoSubmit);

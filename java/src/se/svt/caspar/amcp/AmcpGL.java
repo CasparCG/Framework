@@ -45,7 +45,7 @@ public class AmcpGL implements GL {
      */
     public AmcpGL(AmcpCasparDevice device) {
         mDevice = device;
-        refreshInfo();
+        //refreshInfo();
     }
 
     /** {@inheritDoc} */
