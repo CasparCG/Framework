@@ -37,6 +37,7 @@ public class AdjustmentBoolean extends SimpleBooleanProperty implements Refresha
         mDefaultValue = defaultValue;
 		mLayer = layer;
 		mMixerProperty = mixerProperty;
+		fetchIfStale();
 	}
 
 	private boolean doFetch() {

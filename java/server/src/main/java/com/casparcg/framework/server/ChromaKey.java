@@ -37,7 +37,7 @@ public interface ChromaKey {
     DoubleProperty minBrightness();
     DoubleProperty hueWidth();
     DoubleProperty softness();
-    DoubleProperty spill();
-    DoubleProperty spillDarken();
+    DoubleProperty spillSuppress();
+    DoubleProperty spillSuppressSaturation();
     BooleanProperty showMask();
 }

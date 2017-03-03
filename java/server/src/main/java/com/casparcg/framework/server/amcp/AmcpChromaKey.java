@@ -41,8 +41,8 @@ public class AmcpChromaKey implements ChromaKey {
     private final DoubleProperty mMinBrightness;
     private final DoubleProperty mHueWidth;
     private final DoubleProperty mSoftness;
-    private final DoubleProperty mSpill;
-    private final DoubleProperty mSpillDarken;
+    private final DoubleProperty mSpillSuppress;
+    private final DoubleProperty mSpillSuppressSaturation;
     private final BooleanProperty mShowMask;
 
 	/**
@@ -57,8 +57,8 @@ public class AmcpChromaKey implements ChromaKey {
         mMinBrightness = new SimpleDoubleProperty(0);
 		mHueWidth = new SimpleDoubleProperty(0.1);
         mSoftness = new SimpleDoubleProperty(0.1);
-        mSpill = new SimpleDoubleProperty(1);
-        mSpillDarken = new SimpleDoubleProperty(2);
+        mSpillSuppress = new SimpleDoubleProperty(0);
+        mSpillSuppressSaturation = new SimpleDoubleProperty(1);
         mShowMask = new SimpleBooleanProperty(false);
 
         mEnable.addListener(this::send);
@@ -67,8 +67,8 @@ public class AmcpChromaKey implements ChromaKey {
         mMinBrightness.addListener(this::send);
         mHueWidth.addListener(this::send);
         mSoftness.addListener(this::send);
-        mSpill.addListener(this::send);
-        mSpillDarken.addListener(this::send);
+        mSpillSuppress.addListener(this::send);
+        mSpillSuppressSaturation.addListener(this::send);
         mShowMask.addListener(this::send);
 	}
 
@@ -87,8 +87,8 @@ public class AmcpChromaKey implements ChromaKey {
         mMinBrightness.set(0);
         mHueWidth.set(0.1);
         mSoftness.set(0.1);
-        mSpill.set(1);
-        mSpillDarken.set(2);
+        mSpillSuppress.set(0);
+        mSpillSuppressSaturation.set(1);
         mShowMask.set(false);
 	}
 
@@ -130,14 +130,14 @@ public class AmcpChromaKey implements ChromaKey {
 
 	/** {@inheritDoc} */
 	@Override
-	public DoubleProperty spill() {
-	    return mSpill;
+	public DoubleProperty spillSuppress() {
+	    return mSpillSuppress;
 	}
 
 	/** {@inheritDoc} */
 	@Override
-	public DoubleProperty spillDarken() {
-	    return mSpillDarken;
+	public DoubleProperty spillSuppressSaturation() {
+	    return mSpillSuppressSaturation;
 	}
 
 	/** {@inheritDoc} */
@@ -155,8 +155,8 @@ public class AmcpChromaKey implements ChromaKey {
 	                + " " + mMinSaturation.get()
 	                + " " + mMinBrightness.get()
 	                + " " + mSoftness.get()
-	                + " " + mSpill.get()
-	                + " " + mSpillDarken.get()
+	                + " " + mSpillSuppress.get()
+	                + " " + mSpillSuppressSaturation.get()
 	                + " " + (mShowMask.get() ? "1" : "0"));
 	    } else {
             mLayer.executeCustomCommand("MIXER", "CHROMA 0");
