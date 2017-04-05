@@ -20,7 +20,7 @@
 */
 package com.casparcg.framework.server.osc;
 
-import com.illposed.osc.OSCMessage;
+import java.util.List;
 
 /**
  * TODO documentation.
@@ -28,5 +28,5 @@ import com.illposed.osc.OSCMessage;
  * @author Helge Norberg, helge.norberg@svt.se
  */
 public interface OscHandler {
-    void handle(OSCMessage message);
+    void handle(String path, List<Object> arguments);
 }

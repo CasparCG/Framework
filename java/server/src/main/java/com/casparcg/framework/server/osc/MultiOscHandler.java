@@ -20,11 +20,9 @@
 */
 package com.casparcg.framework.server.osc;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import com.illposed.osc.OSCMessage;
-
 
 /**
  * TODO documentation.
@@ -45,12 +43,12 @@ public class MultiOscHandler implements OscHandler {
 
     /** {@inheritDoc} */
     @Override
-    public void handle(OSCMessage message) {
+    public void handle(String path, List<Object> arguments) {
         String handledPath = mHandlers
                 .keySet()
                 .stream()
                 .sorted((o1, o2) -> Integer.compare(o2.length(), o1.length()))
-                .filter(p -> message.getAddress().startsWith(p))
+                .filter(p -> path.startsWith(p))
                 .findFirst()
                 .orElse(null);
 
@@ -62,9 +60,8 @@ public class MultiOscHandler implements OscHandler {
 
         if (handler != null) {
             String restPath =
-                    message.getAddress().substring(handledPath.length());
-            message.setAddress(restPath);
-            handler.handle(message);
+                    path.substring(handledPath.length());
+            handler.handle(restPath, arguments);
         }
     }
 }
