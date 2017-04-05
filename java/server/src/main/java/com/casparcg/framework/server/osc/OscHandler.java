@@ -18,17 +18,15 @@
 *
 * Author: Helge Norberg
 */
-package com.casparcg.framework.server;
+package com.casparcg.framework.server.osc;
+
+import com.illposed.osc.OSCMessage;
 
 /**
  * TODO documentation.
  *
  * @author Helge Norberg, helge.norberg@svt.se
  */
-public enum TransitionType {
-    CUT,
-    MIX,
-    PUSH,
-    SLIDE,
-    WIPE
+public interface OscHandler {
+    void handle(OSCMessage message);
 }
