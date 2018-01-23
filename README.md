@@ -18,7 +18,7 @@ various frameworks and to have a clear history for each framework available comp
 - [x] Create a README and inform that this repository is deprecated from now on
 
 ### Framework/csharp
-- [x] Create a new repository at GitHub (CasparCG/dotnet-framework)
+- [x] Create a new repository at GitHub (CasparCG/libdotnet)
 - [x]  Push locally filtered repository to the new repository
 - [x] Create a README
 - [x] Create a .gitignore
@@ -27,6 +27,18 @@ various frameworks and to have a clear history for each framework available comp
 - [x] Make sure it builds with latest Visual Studio
 - [x] Update README if needed
 - [x] Create a release if possible
+
+### Framework/as3/AMCP
+- [x] Create a new repository at GitHub (CasparCG/libas3)
+- [x] Create a README
+- [ ] Create a .gitignore
+- [ ] Find and merge the latest version of AMCP AS3 lib
+- [ ] Push locally filtered repository to the new repository
+- [ ] Move current existing issues to the new repository
+- [ ] Cleanup the existing solution
+- [ ] Make sure it builds/works
+- [ ] Update README if needed
+- [ ] Create a release if possible
 
 ### Framework/as3/TemplateHost
 - [ ] Create a new repository at GitHub
@@ -42,19 +54,8 @@ various frameworks and to have a clear history for each framework available comp
 ### Framework/as3/components/Image
 - [ ] Merge into TemplateHost
 
-### Framework/as3/AMCP
-- [ ] Create a new repository at GitHub
-- [ ] Push locally filtered repository to the new repository
-- [ ] Create a README
-- [ ] Create a .gitignore
-- [ ] Move current existing issues to the new repository
-- [ ] Cleanup the existing solution
-- [ ] Make sure it builds/works
-- [ ] Update README if needed
-- [ ] Create a release if possible
-
 ### Framework/java
-- [ ] Need an overview
+- [ ] Needs an overview
 
 
 [Announcement]: https://casparcg.com/forum/viewtopic.php?f=13&t=4828
